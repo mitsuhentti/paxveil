@@ -1,0 +1,85 @@
+{
+  "checked_at": "2026-10-09T23:00:13Z",
+  "results": [
+    {
+      "source": "OSV",
+      "status": 200,
+      "seconds": 0.812,
+      "url": "https://api.osv.dev/v1/query",
+      "advisories": [
+        {
+          "id": "GHSA-9hjg-9r4m-mvj7",
+          "aliases": [
+            "CVE-2024-47081",
+            "PYSEC-2026-1872"
+          ]
+        },
+        {
+          "id": "GHSA-9wx4-h78v-vm56",
+          "aliases": [
+            "CVE-2024-35195",
+            "PYSEC-2026-1873"
+          ]
+        },
+        {
+          "id": "GHSA-gc5v-m9x4-r6x2",
+          "aliases": [
+            "CVE-2026-25645",
+            "PYSEC-2026-2275"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1872",
+          "aliases": [
+            "CVE-2024-47081",
+            "GHSA-9hjg-9r4m-mvj7"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1873",
+          "aliases": [
+            "CVE-2024-35195",
+            "GHSA-9wx4-h78v-vm56"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2275",
+          "aliases": [
+            "CVE-2026-25645",
+            "GHSA-gc5v-m9x4-r6x2"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "PyPI",
+      "status": 200,
+      "seconds": 0.502,
+      "url": "https://pypi.org/pypi/requests/2.31.0/json",
+      "package": "requests",
+      "version": "2.31.0"
+    },
+    {
+      "source": "deps.dev",
+      "status": 200,
+      "seconds": 0.72,
+      "url": "https://api.deps.dev/v3/systems/pypi/packages/requests/versions/2.31.0:dependencies",
+      "nodes": 5,
+      "edges": 4
+    },
+    {
+      "source": "EPSS",
+      "status": 200,
+      "seconds": 0.611,
+      "url": "https://api.first.org/data/v1/epss?cve=CVE-2023-32681",
+      "data": [
+        {
+          "cve": "CVE-2023-32681",
+          "epss": "0.029740000",
+          "percentile": "0.868660000",
+          "date": "2026-10-09"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "captured_at": "2026-10-11T20:23:06.991836+00:00",
+  "method": "Win32 Toolhelp descendants of project manifest PIDs; GetProcessMemoryInfo; one idle snapshot",
+  "limits": "Sum of working sets double-counts shared pages. Not peak RSS or a load benchmark. No unrelated process metadata exported.",
+  "components": [
+    {
+      "component": "postgres",
+      "processes_measured": 12,
+      "unreadable_processes": 3,
+      "working_set_mib": 171.35,
+      "private_commit_mib": 44.94
+    },
+    {
+      "component": "api",
+      "processes_measured": 3,
+      "unreadable_processes": 1,
+      "working_set_mib": 94.35,
+      "private_commit_mib": 71.67
+    },
+    {
+      "component": "worker",
+      "processes_measured": 3,
+      "unreadable_processes": 1,
+      "working_set_mib": 93.03,
+      "private_commit_mib": 70.84
+    },
+    {
+      "component": "web",
+      "processes_measured": 2,
+      "unreadable_processes": 0,
+      "working_set_mib": 96.77,
+      "private_commit_mib": 99.87
+    },
+    {
+      "component": "bot",
+      "processes_measured": 3,
+      "unreadable_processes": 0,
+      "working_set_mib": 191.16,
+      "private_commit_mib": 170.52
+    }
+  ],
+  "total_working_set_sum_mib": 646.66,
+  "total_private_commit_mib": 457.84
+}

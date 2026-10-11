@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-10-11T20:23:05.358361+00:00",
+  "scope": "Local sequential HTTP samples; not a load test or production SLA",
+  "persistence_unchanged": true,
+  "qa_saved_state": {
+    "sha256": "dc3084e438c0347e018e9efc8533cb74f75cabee06d84f5135794425889af499",
+    "saved_scans": 1,
+    "finding_states": 3
+  },
+  "api_health": {
+    "samples": 20,
+    "median_ms": 2.14,
+    "p95_ms": 2.56,
+    "max_ms": 6.07
+  },
+  "web_html": {
+    "samples": 20,
+    "median_ms": 2.65,
+    "p95_ms": 3.42,
+    "max_ms": 6.07
+  }
+}

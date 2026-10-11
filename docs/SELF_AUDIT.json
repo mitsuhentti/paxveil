@@ -1,0 +1,1367 @@
+{
+  "dependencies": [
+    {
+      "name": "aiofiles",
+      "version": "25.1.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==25.1.0",
+      "extras": []
+    },
+    {
+      "name": "aiogram",
+      "version": "3.31.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.31.0",
+      "extras": []
+    },
+    {
+      "name": "aiohappyeyeballs",
+      "version": "2.7.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.7.1",
+      "extras": []
+    },
+    {
+      "name": "aiohttp",
+      "version": "3.14.4",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.14.4",
+      "extras": []
+    },
+    {
+      "name": "aiosignal",
+      "version": "1.4.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.4.0",
+      "extras": []
+    },
+    {
+      "name": "alembic",
+      "version": "1.20.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.20.0",
+      "extras": []
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.0.5",
+      "extras": []
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.8.0",
+      "extras": []
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==4.15.1",
+      "extras": []
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==26.1.0",
+      "extras": []
+    },
+    {
+      "name": "certifi",
+      "version": "2026.7.22",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2026.7.22",
+      "extras": []
+    },
+    {
+      "name": "click",
+      "version": "8.5.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==8.5.0",
+      "extras": []
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.4.6",
+      "extras": []
+    },
+    {
+      "name": "coverage",
+      "version": "7.16.2",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==7.16.2",
+      "extras": []
+    },
+    {
+      "name": "cvss",
+      "version": "3.6",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.6",
+      "extras": []
+    },
+    {
+      "name": "fastapi",
+      "version": "0.143.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.143.0",
+      "extras": []
+    },
+    {
+      "name": "frozenlist",
+      "version": "1.8.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.8.0",
+      "extras": []
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.16.0",
+      "extras": []
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.0.9",
+      "extras": []
+    },
+    {
+      "name": "httptools",
+      "version": "0.9.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.9.0",
+      "extras": []
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.28.1",
+      "extras": []
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.20",
+      "extras": []
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.3.1",
+      "extras": []
+    },
+    {
+      "name": "magic-filter",
+      "version": "1.0.12",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.0.12",
+      "extras": []
+    },
+    {
+      "name": "mako",
+      "version": "1.4.3",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.4.3",
+      "extras": []
+    },
+    {
+      "name": "markupsafe",
+      "version": "3.0.4",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.0.4",
+      "extras": []
+    },
+    {
+      "name": "multidict",
+      "version": "6.9.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==6.9.1",
+      "extras": []
+    },
+    {
+      "name": "opentelemetry-api",
+      "version": "1.45.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.45.1",
+      "extras": []
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==26.3",
+      "extras": []
+    },
+    {
+      "name": "pluggy",
+      "version": "1.6.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.6.0",
+      "extras": []
+    },
+    {
+      "name": "propcache",
+      "version": "0.5.4",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.5.4",
+      "extras": []
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==7.2.2",
+      "extras": []
+    },
+    {
+      "name": "psycopg",
+      "version": "3.3.6",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.3.6",
+      "extras": []
+    },
+    {
+      "name": "psycopg-binary",
+      "version": "3.3.6",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==3.3.6",
+      "extras": []
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.5",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.13.5",
+      "extras": []
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.15.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.15.0",
+      "extras": []
+    },
+    {
+      "name": "pydantic-core",
+      "version": "2.46.5",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.46.5",
+      "extras": []
+    },
+    {
+      "name": "pygments",
+      "version": "2.21.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.21.0",
+      "extras": []
+    },
+    {
+      "name": "pytest",
+      "version": "9.1.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==9.1.1",
+      "extras": []
+    },
+    {
+      "name": "pytest-asyncio",
+      "version": "1.4.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.4.0",
+      "extras": []
+    },
+    {
+      "name": "pytest-cov",
+      "version": "7.1.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==7.1.0",
+      "extras": []
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.2.4",
+      "extras": []
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.0.32",
+      "extras": []
+    },
+    {
+      "name": "pyyaml",
+      "version": "6.0.3",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==6.0.3",
+      "extras": []
+    },
+    {
+      "name": "ruff",
+      "version": "0.17.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.17.0",
+      "extras": []
+    },
+    {
+      "name": "sqlalchemy",
+      "version": "2.1.4",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2.1.4",
+      "extras": []
+    },
+    {
+      "name": "starlette",
+      "version": "1.7.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.7.0",
+      "extras": []
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.4.4",
+      "extras": []
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.16.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==4.16.0",
+      "extras": []
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.5",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==2026.5",
+      "extras": []
+    },
+    {
+      "name": "uv",
+      "version": "0.13.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.13.0",
+      "extras": []
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==0.54.0",
+      "extras": []
+    },
+    {
+      "name": "watchfiles",
+      "version": "1.3.0",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.3.0",
+      "extras": []
+    },
+    {
+      "name": "websockets",
+      "version": "17.2",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==17.2",
+      "extras": []
+    },
+    {
+      "name": "yarl",
+      "version": "1.25.1",
+      "direct": true,
+      "source": "requirements",
+      "marker": null,
+      "status": "active",
+      "specifier": "==1.25.1",
+      "extras": []
+    }
+  ],
+  "findings": [],
+  "graph": {
+    "nodes": [
+      {
+        "id": "aiofiles==25.1.0",
+        "name": "aiofiles",
+        "version": "25.1.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "aiogram==3.31.0",
+        "name": "aiogram",
+        "version": "3.31.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "aiohappyeyeballs==2.7.1",
+        "name": "aiohappyeyeballs",
+        "version": "2.7.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "aiohttp==3.14.4",
+        "name": "aiohttp",
+        "version": "3.14.4",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "aiosignal==1.4.0",
+        "name": "aiosignal",
+        "version": "1.4.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "alembic==1.20.0",
+        "name": "alembic",
+        "version": "1.20.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "annotated-doc==0.0.5",
+        "name": "annotated-doc",
+        "version": "0.0.5",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "annotated-types==0.8.0",
+        "name": "annotated-types",
+        "version": "0.8.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "anyio==4.15.1",
+        "name": "anyio",
+        "version": "4.15.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "attrs==26.1.0",
+        "name": "attrs",
+        "version": "26.1.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "certifi==2026.7.22",
+        "name": "certifi",
+        "version": "2026.7.22",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "click==8.5.0",
+        "name": "click",
+        "version": "8.5.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "colorama==0.4.6",
+        "name": "colorama",
+        "version": "0.4.6",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "coverage==7.16.2",
+        "name": "coverage",
+        "version": "7.16.2",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "cvss==3.6",
+        "name": "cvss",
+        "version": "3.6",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "fastapi==0.143.0",
+        "name": "fastapi",
+        "version": "0.143.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "frozenlist==1.8.0",
+        "name": "frozenlist",
+        "version": "1.8.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "h11==0.16.0",
+        "name": "h11",
+        "version": "0.16.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "httpcore==1.0.9",
+        "name": "httpcore",
+        "version": "1.0.9",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "httptools==0.9.0",
+        "name": "httptools",
+        "version": "0.9.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "httpx==0.28.1",
+        "name": "httpx",
+        "version": "0.28.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "idna==3.20",
+        "name": "idna",
+        "version": "3.20",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "iniconfig==2.3.1",
+        "name": "iniconfig",
+        "version": "2.3.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "magic-filter==1.0.12",
+        "name": "magic-filter",
+        "version": "1.0.12",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "mako==1.4.3",
+        "name": "mako",
+        "version": "1.4.3",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "markupsafe==3.0.4",
+        "name": "markupsafe",
+        "version": "3.0.4",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "multidict==6.9.1",
+        "name": "multidict",
+        "version": "6.9.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "opentelemetry-api==1.45.1",
+        "name": "opentelemetry-api",
+        "version": "1.45.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "packaging==26.3",
+        "name": "packaging",
+        "version": "26.3",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pluggy==1.6.0",
+        "name": "pluggy",
+        "version": "1.6.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "propcache==0.5.4",
+        "name": "propcache",
+        "version": "0.5.4",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "psutil==7.2.2",
+        "name": "psutil",
+        "version": "7.2.2",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "psycopg==3.3.6",
+        "name": "psycopg",
+        "version": "3.3.6",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "psycopg-binary==3.3.6",
+        "name": "psycopg-binary",
+        "version": "3.3.6",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pydantic==2.13.5",
+        "name": "pydantic",
+        "version": "2.13.5",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pydantic-settings==2.15.0",
+        "name": "pydantic-settings",
+        "version": "2.15.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pydantic-core==2.46.5",
+        "name": "pydantic-core",
+        "version": "2.46.5",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pygments==2.21.0",
+        "name": "pygments",
+        "version": "2.21.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pytest==9.1.1",
+        "name": "pytest",
+        "version": "9.1.1",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pytest-asyncio==1.4.0",
+        "name": "pytest-asyncio",
+        "version": "1.4.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pytest-cov==7.1.0",
+        "name": "pytest-cov",
+        "version": "7.1.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "python-dotenv==1.2.4",
+        "name": "python-dotenv",
+        "version": "1.2.4",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "python-multipart==0.0.32",
+        "name": "python-multipart",
+        "version": "0.0.32",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "pyyaml==6.0.3",
+        "name": "pyyaml",
+        "version": "6.0.3",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "ruff==0.17.0",
+        "name": "ruff",
+        "version": "0.17.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "sqlalchemy==2.1.4",
+        "name": "sqlalchemy",
+        "version": "2.1.4",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "starlette==1.7.0",
+        "name": "starlette",
+        "version": "1.7.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "typing-inspection==0.4.4",
+        "name": "typing-inspection",
+        "version": "0.4.4",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "typing-extensions==4.16.0",
+        "name": "typing-extensions",
+        "version": "4.16.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "tzdata==2026.5",
+        "name": "tzdata",
+        "version": "2026.5",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "uv==0.13.0",
+        "name": "uv",
+        "version": "0.13.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "uvicorn==0.54.0",
+        "name": "uvicorn",
+        "version": "0.54.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "watchfiles==1.3.0",
+        "name": "watchfiles",
+        "version": "1.3.0",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "websockets==17.2",
+        "name": "websockets",
+        "version": "17.2",
+        "direct": true,
+        "status": "active"
+      },
+      {
+        "id": "yarl==1.25.1",
+        "name": "yarl",
+        "version": "1.25.1",
+        "direct": true,
+        "status": "active"
+      }
+    ],
+    "edges": [
+      {
+        "source": "aiogram==3.31.0",
+        "target": "aiofiles==25.1.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiogram==3.31.0",
+        "target": "aiohttp==3.14.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiogram==3.31.0",
+        "target": "certifi==2026.7.22",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiogram==3.31.0",
+        "target": "magic-filter==1.0.12",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiogram==3.31.0",
+        "target": "pydantic==2.13.5",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiogram==3.31.0",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "aiohappyeyeballs==2.7.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "aiosignal==1.4.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "attrs==26.1.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "frozenlist==1.8.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "multidict==6.9.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "propcache==0.5.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiohttp==3.14.4",
+        "target": "yarl==1.25.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiosignal==1.4.0",
+        "target": "frozenlist==1.8.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "aiosignal==1.4.0",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "alembic==1.20.0",
+        "target": "sqlalchemy==2.1.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "alembic==1.20.0",
+        "target": "mako==1.4.3",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "alembic==1.20.0",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "anyio==4.15.1",
+        "target": "idna==3.20",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "anyio==4.15.1",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "fastapi==0.143.0",
+        "target": "starlette==1.7.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "fastapi==0.143.0",
+        "target": "pydantic==2.13.5",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "fastapi==0.143.0",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "fastapi==0.143.0",
+        "target": "typing-inspection==0.4.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "fastapi==0.143.0",
+        "target": "annotated-doc==0.0.5",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "fastapi==0.143.0",
+        "target": "opentelemetry-api==1.45.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "httpcore==1.0.9",
+        "target": "certifi==2026.7.22",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "httpcore==1.0.9",
+        "target": "h11==0.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "httpx==0.28.1",
+        "target": "anyio==4.15.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "httpx==0.28.1",
+        "target": "certifi==2026.7.22",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "httpx==0.28.1",
+        "target": "httpcore==1.0.9",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "httpx==0.28.1",
+        "target": "idna==3.20",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "mako==1.4.3",
+        "target": "markupsafe==3.0.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "opentelemetry-api==1.45.1",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "psycopg==3.3.6",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic==2.13.5",
+        "target": "annotated-types==0.8.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic==2.13.5",
+        "target": "pydantic-core==2.46.5",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic==2.13.5",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic==2.13.5",
+        "target": "typing-inspection==0.4.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic-settings==2.15.0",
+        "target": "pydantic==2.13.5",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic-settings==2.15.0",
+        "target": "python-dotenv==1.2.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic-settings==2.15.0",
+        "target": "typing-inspection==0.4.4",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pydantic-core==2.46.5",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest==9.1.1",
+        "target": "iniconfig==2.3.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest==9.1.1",
+        "target": "packaging==26.3",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest==9.1.1",
+        "target": "pluggy==1.6.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest==9.1.1",
+        "target": "pygments==2.21.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest-asyncio==1.4.0",
+        "target": "pytest==9.1.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest-asyncio==1.4.0",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest-cov==7.1.0",
+        "target": "coverage==7.16.2",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest-cov==7.1.0",
+        "target": "pluggy==1.6.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "pytest-cov==7.1.0",
+        "target": "pytest==9.1.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "sqlalchemy==2.1.4",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "starlette==1.7.0",
+        "target": "anyio==4.15.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "starlette==1.7.0",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "typing-inspection==0.4.4",
+        "target": "typing-extensions==4.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "uvicorn==0.54.0",
+        "target": "click==8.5.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "uvicorn==0.54.0",
+        "target": "h11==0.16.0",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "watchfiles==1.3.0",
+        "target": "anyio==4.15.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "yarl==1.25.1",
+        "target": "idna==3.20",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "yarl==1.25.1",
+        "target": "multidict==6.9.1",
+        "source_type": "PyPI release metadata"
+      },
+      {
+        "source": "yarl==1.25.1",
+        "target": "propcache==0.5.4",
+        "source_type": "PyPI release metadata"
+      }
+    ]
+  },
+  "warnings": [
+    "A requirements file does not establish whether all transitive dependencies are pinned. Submitted entries are treated as roots for simulation.",
+    "This is a known-vulnerability version analysis. Application reachability and exploitability are not tested.",
+    "deps.dev metadata cross-check was bounded to the first 10 recorded releases; OSV covers all eligible exact pins."
+  ],
+  "sources": [
+    {
+      "name": "PyPI",
+      "status": "ok",
+      "fetched_at": "2026-10-09T23:18:52.137349+00:00",
+      "requests": 55,
+      "snapshots": [
+        "48138cba23b889f83fe248ff473e33282dc4713a10c70c4505c2ab51e610c39a",
+        "fa796f71c633880234ef864ebdfb1e3b632ece7465bf907da7ca27fb86b48b3f",
+        "7ec76c7c3cdf6b01ad39f6d754d108b0fd664a176c89e8724efdcb4ca19b4b6c",
+        "0e623e47849664e29c0a432f5491f9dfe7870f784e55b70fccf8e8523461e09c",
+        "cd743f508f32494b96a4ac7711aa4da5670bcf799cc48fed0a3d64bede50578b",
+        "e20f700d66ef488333c1a668be356ec0ebdcdbc1962c6604412c9dd893389cab",
+        "a6883bd2a8ce2bedeecef6e5150017c2ea3dfbfdbfc1c24a5ceb2e4a4df65970",
+        "cda6ebcaec80a2c4f89014a1bffb17e1dc6067624c16cac4c514b3fdfe704a7c",
+        "c43d9617dc378f5469d5c8d8ed93cdfe84ee3263e9a53da132c6f6007671ea32",
+        "ab50812f9831a41c81cfc1771b67f23987053232282756cce28da6036d1e3bc5",
+        "1ed0d72635a0015d37ba71646c28d86b5ef20b6215b641fac3e18489e8b991ae",
+        "35a17ec84d7960a2ec89020276c20eef48d03705d7f09ab4e49086dd7f496f09",
+        "2503b2721954b9805814477b9090b2a1ba45f6eab30825fc992ec05a54f4c4f7",
+        "667e4b15d3f852a1e86be30791d4c070283ad5e79b36161dd82ed890ac724c98",
+        "85ee023e16fa0d4ce25ef149865e5b59cc021e30f5053c5df48b56ed9a16cbcc",
+        "1a2e30c1a124bb6ae55b4f407654ef7cd8bf7ae61aff692636a6fe9b6982ca4a",
+        "47f6fbdbd2f7eb5195a23ba11c5a5dc7c34180271258ff7a1165ddac472f37ec",
+        "8c54350378385ed45f18db0087317b7897a69a071d1ce4cbc6acd2f7d4dc9b43",
+        "33dbd882a70d9b70b9ef67ad7f8c990277e757632f33290227fd7dfa2a391c0f",
+        "83f76ca7e440c8cac536cf514c6ee15b67dc72e83c68bad73c083cea22d4f3c2",
+        "8f1c554098e96cf1c9880b81ee144a932d15d18328d389b9ca4772826b7d9819",
+        "f54772cc82f58cde45f4b9e2bb1ebb86b0cd16a702daecd2850228b99acdc49c",
+        "040984bdfb5dfebf4276c57c977bbd79e0716fe60efe545591cf045639da25ce",
+        "3f49a193aa95f8ed17128e35e0841998c8f3b76d8d7f7a1e59054e1184775eb6",
+        "512103dfbd3d94cb5d8e342949d11e7700799a930cc43bcef14a469f1bf6b312",
+        "44f391f0a4607164510d6eaca98f28d06dd6885c04d4b37794ce8b57d82d15a3",
+        "714a17c7aaa659ce58fb1ee16eaf044368134a21ffb3709baf92421e581feb37",
+        "782d4db30a16a5660b780d53f4c0954651adc555ef45c2b122fd258a0179fb33",
+        "14d352ac100a40cd8925a2c3b779b5be30808683091ce1869ca17b25e2e8abfa",
+        "77c63828143a8c68ee34257c5077d152072d511840ae8ab011f698f5bfd44373",
+        "4fdb2028ecc835dbccaf0325bfb7c066c83d96a684de44bdeaf95a1aa969b2fc",
+        "25bf79461ae0a57cacf6cac6415bf2f759cecf4e65f0110f3ab4b2065e682721",
+        "e7812c7148d32fe5d85cc1146d4b7449828705ee9ba5d2141f5dad6785488296",
+        "33dd09ce41fa868ec40a1962519a4a453bc92da95d74183cdb8f5fd0b1b08e5b",
+        "ddc96c78fa0e359f471038350bc260c48de8b371038ff7f1d47e72738675e15c",
+        "c69fae6a0b76f42d17d4439c770cf6100e497556ffd12e87425bb68b19011bf0",
+        "dc386ccbb28619e0b0d5eb8465f5ba99e32ba996f14224a7f180e2c7fa79c31d",
+        "abbf3ca2476fbbba2b60637a4470aa6078bbc3e6571e5979930213baceaf4b7b",
+        "be425c5234f2b2cb31db9c41c8bd2374b4973e242f28e8297c3ca38012e7db07",
+        "f1f7ba869b0606c5add8b45cb36187977fc7f9f43379afbdfe76d87ca3a4c755",
+        "9bf0bda136faaf9daa90c7f75f4e2ac773658a74df2436c46ad272ed1bcd1603",
+        "e220fd8c2609c84da40492e092195748a2fd4046d1b32d8caabfac49a6541cd2",
+        "1e102a37ccf4464793569346a77ec277297a80ebf74c59dd10473ab7ba52f142",
+        "e871c9e20d8488c6d8efb5621dfafb341e7930c4dfa6e09ec853c8208ec2e0f8",
+        "a6222daf1ff06b4409aa9d4d18a3fbbbdf2a251a4b77b494b11025849c380ace",
+        "cf1fd4e18f854a2f6f2d4e4c54201d96ba50ecf9ec1e63fe6c93767e35a554df",
+        "e5a954b444a7e3dd5e184cabc4b9f36799cc75456c526f344197d1fc35204817",
+        "93be6bb4b8e6163e5da0412556afc04108bdde915c35e2d6e30f9635e1cdfef0",
+        "63e69fa08fabbb2b36c16efd3a25311c3199871548a8af8cfac1e0d9da1fca5f",
+        "15a6311301190afa93e56415de22e24371b363dcbe5cf608ebbebd77107feb4b",
+        "2d41a557778d0fbc1fa90596cea0938ab6ccc9f7efdb1f242215e323e0c02252",
+        "5a53f236a0aff58494bd715c76aeb0951a0d7eb04cda9f322fd4d46173f27c60",
+        "0b7ff0e0346b4d7073924994674834fcd71177fafc306479c3cb203d33b50de3",
+        "3719fc879595b8f3102f264cebfb9398b754ed625bb4ceca7cefd54410ac35c1",
+        "a6de6e16f5c5c08017e3515df2a96cd3c04113229a74f1cefb8e9ab2df0d96a3"
+      ]
+    },
+    {
+      "name": "OSV",
+      "status": "ok",
+      "fetched_at": "2026-10-09T23:18:52.789216+00:00",
+      "requests": 1,
+      "snapshots": [
+        "a6d67de35b9c18b9d4898f8d3b8c9f3528fb0239073679fd8e85ce5cfa669757"
+      ]
+    },
+    {
+      "name": "deps.dev",
+      "status": "ok",
+      "fetched_at": "2026-10-09T23:18:54.795785+00:00",
+      "requests": 10,
+      "snapshots": [
+        "3fc2c1349fbfab3b65737827f8ed1c5af93cf71858ea8914899c0c5101cc1458",
+        "9f3bd58d760116a5bb3fc2de38f2f25490c6676ca4b0316ffb65a2a25808da7a",
+        "6000d48b9052217e9e758ed1b67b34004dd87640df0f5105c68e4037edb57576",
+        "3db435103bf5f06ae6b550a7cba863cd2d464feaee13610c3c923af75cae92f7",
+        "0ea0ddec76a1f7e579f676b59636b3d321894e4a28b2eb01df93c03f073f1c27",
+        "f27ddb07823122be0b0a0f4ded3ad34b77fa7578bc1bbef58b8b2b1430f6f9ac",
+        "66e7d4c8556fa3a032480120e5c37a5efb246dcd44a8cda3348bd27cbcf6aeca"
+      ]
+    }
+  ],
+  "stats": {
+    "dependencies": 55,
+    "findings": 0,
+    "duration_seconds": 13.61
+  },
+  "completeness": "recorded_versions_checked",
+  "environment": {
+    "python_version": "3.11",
+    "platform": "linux"
+  },
+  "input_format": "requirements",
+  "checked_at": "2026-10-09T23:18:54.795785+00:00"
+}
