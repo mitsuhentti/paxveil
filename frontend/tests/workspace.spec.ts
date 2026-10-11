@@ -1,0 +1,31 @@
+import { expect, test } from "@playwright/test";
+test("real scan, graph, FixLab, Fire Drill, Watch and persisted settings", async ({ page }) => {
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
+  await page.goto("/"); await expect(page.getByRole("heading", { name: /Увидеть риск/ })).toBeVisible();
+  await page.getByRole("link", { name: "Проверить зависимости" }).click();
+  const username = `e2e_${Date.now()}`;
+  await page.getByLabel("Имя пользователя").fill(username); await page.getByLabel("Пароль", { exact: true }).fill("Paxveil-E2E-2026!");
+  await page.getByRole("button", { name: "Создать аккаунт", exact: true }).click(); await expect(page.getByRole("heading", { name: "Ваши проекты" })).toBeVisible();
+  await page.getByRole("button", { name: "Создать первый проект" }).click(); await page.getByLabel("Название проекта").fill("Python acceptance");
+  await page.getByLabel("Файл зависимостей").setInputFiles({ name: "requirements.txt", mimeType: "text/plain", buffer: Buffer.from("requests==2.31.0\n") });
+  await page.getByRole("button", { name: "Сохранить и проверить" }).click(); await expect(page.getByRole("heading", { name: "Python acceptance", exact: true })).toBeVisible();
+  const projectUrl = page.url(); await expect(page.getByRole("heading", { name: /Известные уязвимости/ })).toBeVisible({ timeout: 120_000 });
+  await expect(page.locator(".findings-table tbody tr").first()).toBeVisible(); await page.getByRole("button", { name: /Подробнее/ }).first().click(); await expect(page.getByRole("dialog")).toBeVisible(); await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+  await page.getByRole("tab", { name: "Граф зависимостей" }).click(); await expect(page.getByRole("group", { name: "Граф зависимостей" })).toBeVisible(); await page.getByRole("button", { name: /requests 2.31.0/ }).click(); await expect(page.locator(".graph-detail")).toContainText("requests");
+  await page.getByRole("tab", { name: "FixLab", exact: true }).click(); await page.getByRole("button", { name: "Рассчитать стратегии" }).click(); await expect(page.locator(".strategy")).toHaveCount(3, { timeout: 120_000 });
+  await page.getByRole("button", { name: "Включить Watch" }).click(); await expect(page.getByRole("button", { name: "Watch включён" })).toBeVisible();
+  await page.reload(); await expect(page.getByRole("heading", { name: "Python acceptance", exact: true })).toBeVisible(); await expect(page.getByRole("button", { name: "Watch включён" })).toBeVisible();
+  await page.goto("/app/fire"); await page.getByLabel("Идентификатор уязвимости").fill("CVE-2024-35195"); await page.getByRole("button", { name: "Проверить проекты" }).click(); await expect(page.locator(".fire-match")).toContainText("requests", { timeout: 60_000 });
+  await page.goto("/app/settings"); await expect(page.getByLabel("Часовой пояс")).toHaveValue("Europe/Moscow"); await page.getByRole("checkbox", { name: "Ежедневная сводка" }).check(); await page.getByRole("button", { name: "Сохранить настройки" }).click(); await expect(page.getByRole("status")).toContainText("Настройки сохранены"); await page.reload(); await expect(page.getByRole("checkbox", { name: "Ежедневная сводка" })).toBeChecked();
+  await page.getByRole("button", { name: "Получить код связи" }).click(); await expect(page.locator(".copy-command")).toContainText("/link");
+  await page.setViewportSize({ width: 390, height: 844 }); await page.getByRole("button", { name: "Открыть меню" }).click(); await expect(page.getByRole("navigation", { name: "Разделы приложения" })).toBeVisible(); await page.getByRole("link", { name: "История", exact: true }).click(); await expect(page.getByRole("heading", { name: "История проверок" })).toBeVisible();
+  await page.goto(projectUrl); await page.getByRole("button", { name: "Удалить проект", exact: true }).click(); await page.getByRole("dialog").getByRole("button", { name: "Удалить проект", exact: true }).click(); await expect(page.getByRole("heading", { name: "Ваши проекты" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+test("invalid upload exposes API validation without fake report", async ({ page, request }) => {
+  const username = `invalid_${Date.now()}`;
+  const registration = await request.post("/api/auth/register", { data: { username, password: "Paxveil-E2E-2026!" } }); expect(registration.ok()).toBeTruthy();
+  await page.context().addCookies(await request.storageState().then(state => state.cookies)); await page.goto("/app");
+  await page.getByRole("button", { name: "Создать первый проект" }).click(); await page.getByLabel("Название проекта").fill("Invalid dependencies"); await page.getByLabel("Файл зависимостей").setInputFiles({ name: "not-supported.txt", mimeType: "text/plain", buffer: Buffer.from("not a requirement!\n") });
+  await page.getByRole("button", { name: "Сохранить и проверить" }).click(); await expect(page.getByRole("alert")).toContainText("Поддерживаются"); await expect(page.getByRole("dialog")).toBeVisible();
+});
