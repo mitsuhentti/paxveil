@@ -1,0 +1,3 @@
+# Public PyPI example package, verified against OSV on 2026-10-10.
+# Future advisories can change the result.
+sampleproject==4.0.0

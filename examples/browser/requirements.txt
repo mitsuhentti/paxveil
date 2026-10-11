@@ -1,0 +1,3 @@
+# Intentional historical public version for vulnerability acceptance tests.
+# PAXVEIL reads metadata; these dependencies are never installed.
+requests==2.31.0

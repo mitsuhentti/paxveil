@@ -1,0 +1,4 @@
+# Exact vulnerable pin plus an unresolved requirement: the report is partial.
+requests==2.31.0
+urllib3>=2
+colorama==0.4.6; sys_platform == "win32"
