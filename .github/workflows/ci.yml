@@ -1,0 +1,37 @@
+name: PAXVEIL verification
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: paxveil
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: paxveil
+        ports: ['5432:5432']
+        options: --health-cmd='pg_isready -U paxveil' --health-interval=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install -r backend/requirements.lock
+      - run: python -m pytest -q -m 'not integration'
+        working-directory: backend
+      - run: alembic upgrade head && alembic check
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+psycopg://paxveil:ci-only-password@localhost:5432/paxveil
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm, cache-dependency-path: frontend/package-lock.json}
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run typecheck && npm run build
+        working-directory: frontend
