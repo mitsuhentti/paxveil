@@ -1,15 +1,28 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, String, Text, UniqueConstraint, create_engine, event
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    create_engine,
+    event,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from paxveil.config import get_settings
 
 
 def now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def uid() -> str:
@@ -68,7 +81,7 @@ class Scan(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     project_id: Mapped[str] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     status: Mapped[str] = mapped_column(String(20), default="queued")
-    report: Mapped[dict | None] = mapped_column(JSON)
+    report: Mapped[dict | None] = mapped_column(JSON(none_as_null=True))
     error: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, index=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -185,6 +198,7 @@ class Notification(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    claim_token: Mapped[str | None] = mapped_column(String(36))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 

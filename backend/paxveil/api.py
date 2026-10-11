@@ -1,3 +1,4 @@
+import copy
 import re
 import secrets
 import time
@@ -6,7 +7,16 @@ from datetime import timedelta
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import delete, select, text, update
@@ -14,15 +24,40 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DBSession
 
 from paxveil import __version__
-from paxveil.auth import bot_access, current_user, digest, new_session, password_hash, token_from, user_json, verify_password
+from paxveil.auth import (
+    bot_access,
+    current_user,
+    digest,
+    new_session,
+    password_hash,
+    token_from,
+    user_json,
+    verify_password,
+)
 from paxveil.config import get_settings
-from paxveil.db import FindingState, Job, LinkCode, Notification, Project, Scan, Session, StatusHistory, Subscription, User, get_db, now
+from paxveil.db import (
+    FindingState,
+    Job,
+    LinkCode,
+    Notification,
+    Project,
+    Scan,
+    Session,
+    SessionLocal,
+    StatusHistory,
+    Subscription,
+    User,
+    get_db,
+    now,
+)
+from paxveil.upload_limit import UploadLimitMiddleware
 
 app = FastAPI(title="PAXVEIL API", version=__version__)
 settings = get_settings()
 origins = settings.allowed_origins.split(",")
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "Authorization"])
 limits: OrderedDict[str, tuple[float, int]] = OrderedDict()
+app.add_middleware(UploadLimitMiddleware, max_bytes=settings.max_file_bytes + 16384)
 
 
 @app.middleware("http")
@@ -31,6 +66,12 @@ async def security(request: Request, call_next):
     ip = request.client.host if request.client else "unknown"
     auth_route = request.url.path.startswith("/api/auth/")
     key = f"{ip}:{'auth' if auth_route else 'api'}"
+    token = token_from(request)
+    if token and not auth_route:
+        with SessionLocal() as limit_db:
+            owner = limit_db.scalar(select(Session.user_id).where(Session.token_hash == digest(token), Session.expires_at > now()))
+        if owner:
+            key = f"account:{owner}"
     window, count = limits.get(key, (time.monotonic(), 0))
     if time.monotonic() - window > 60:
         window, count = time.monotonic(), 0
@@ -78,7 +119,7 @@ class Preferences(BaseModel):
         try:
             ZoneInfo(value)
         except (ZoneInfoNotFoundError, ValueError):
-            raise ValueError("Unknown IANA timezone")
+            raise ValueError("Unknown IANA timezone") from None
         return value
 
     @field_validator("quiet_start", "quiet_end")
@@ -134,7 +175,13 @@ def scan_json(scan: Scan | None):
 def project_json(db, project):
     last = db.scalar(select(Scan).where(Scan.project_id == project.id).order_by(Scan.created_at.desc()).limit(1))
     watch = db.get(Subscription, project.id)
-    return {"id": project.id, "name": project.name, "filename": project.filename, "python_version": project.python_version, "platform": project.platform, "created_at": project.created_at, "watch": bool(watch and watch.enabled), "latest_scan": scan_json(last)}
+    latest = scan_json(last)
+    if latest and latest["report"]:
+        latest["report"] = copy.deepcopy(latest["report"])
+        states = {(s.advisory_id, s.package): s.status for s in db.scalars(select(FindingState).where(FindingState.project_id == project.id))}
+        for finding in latest["report"].get("findings", []):
+            finding["status"] = states.get((finding["id"], finding["package"]), finding.get("status", "open"))
+    return {"id": project.id, "name": project.name, "filename": project.filename, "python_version": project.python_version, "platform": project.platform, "created_at": project.created_at, "watch": bool(watch and watch.enabled), "latest_scan": latest}
 
 
 def enqueue_scan(db, project):
@@ -170,7 +217,7 @@ def register(body: Credentials, response: Response, db: DBSession = Depends(get_
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(409, "Имя пользователя уже занято")
+        raise HTTPException(409, "Имя пользователя уже занято") from None
     new_session(db, user, response)
     return user_json(user)
 
@@ -218,12 +265,12 @@ async def create_project(name: str = Form(..., min_length=1, max_length=120), fi
     try:
         content.decode("utf-8-sig")
     except UnicodeDecodeError:
-        raise HTTPException(422, "Файл должен быть в UTF-8")
+        raise HTTPException(422, "Файл должен быть в UTF-8") from None
     from paxveil.core.parsers import parse
     try:
         parse(filename, content, python_version=python_version, platform=platform)
     except (ValueError, TypeError) as exc:
-        raise HTTPException(422, str(exc))
+        raise HTTPException(422, str(exc)) from exc
     project = Project(user_id=user.id, name=name.strip(), filename=filename, content=content, python_version=python_version, platform=platform)
     db.add(project)
     db.flush()
@@ -288,12 +335,20 @@ def fixlab(identifier: str, user: User = Depends(current_user), db: DBSession = 
 async def fire_drill(body: FireBody, user: User = Depends(current_user), db: DBSession = Depends(get_db)):
     from paxveil.core.service import fire
     reports = []
+    missing = []
     for project in db.scalars(select(Project).where(Project.user_id == user.id)):
-        last = db.scalar(select(Scan).where(Scan.project_id == project.id).order_by(Scan.created_at.desc()).limit(1))
+        last = db.scalar(select(Scan).where(Scan.project_id == project.id, Scan.status.in_(["completed", "partial"]), Scan.report.is_not(None)).order_by(Scan.created_at.desc()).limit(1))
+        if not last:
+            missing.append(project.name)
         report = dict(last.report or {}) if last else {}
         report.update(project_id=project.id, project_name=project.name)
         reports.append(report)
-    return await fire(body.cve, reports)
+    result = await fire(body.cve, reports)
+    if missing:
+        result.setdefault("limitations", []).append("Нет завершённого инвентаря для проектов: " + ", ".join(missing) + ". Их отсутствие в совпадениях не подтверждает, что они не затронуты.")
+        if result.get("status") == "no_match":
+            result["status"] = "insufficient_data"
+    return result
 
 
 @app.get("/api/settings")
@@ -305,7 +360,11 @@ def preferences(user: User = Depends(current_user)):
 def save_preferences(body: Preferences, user: User = Depends(current_user), db: DBSession = Depends(get_db)):
     if bool(body.quiet_start) != bool(body.quiet_end):
         raise HTTPException(422, "Укажите оба времени тихих часов")
+    if body.quiet_start and body.quiet_start == body.quiet_end:
+        raise HTTPException(422, "Начало и конец тихих часов должны отличаться")
     user.preferences = body.model_dump()
+    from paxveil.notifications import delivery_time
+    db.execute(update(Notification).where(Notification.user_id == user.id, Notification.status.in_(["pending", "retry", "awaiting_link"])).values(run_at=delivery_time(user.preferences, now())))
     db.commit()
     return {**body.model_dump(), "telegram_id": int(user.telegram_id) if user.telegram_id else None}
 
@@ -338,6 +397,16 @@ def finding_status(identifier: str, body: StateBody, user: User = Depends(curren
         raise HTTPException(404, "Finding not found")
     if state.status != body.status:
         db.add(StatusHistory(state_id=state.id, old_status=state.status, new_status=body.status))
+        subscription = db.get(Subscription, identifier)
+        if subscription and subscription.enabled:
+            from paxveil.notifications import schedule_events
+            last = db.scalar(select(Scan).where(Scan.project_id == identifier, Scan.report.is_not(None)).order_by(Scan.created_at.desc()).limit(1))
+            if last:
+                finding = next((f for f in last.report.get("findings", []) if f["id"] == body.advisory_id and f["package"] == body.package), None)
+                if finding:
+                    before = {**finding, "status": state.status}
+                    after = {**finding, "status": body.status, "status_changed_at": now().isoformat()}
+                    schedule_events(db, owned_project(db, identifier, user), user, {"findings": [before]}, {"findings": [after]})
         state.status = body.status
     db.commit()
     return {"status": state.status}
@@ -345,6 +414,7 @@ def finding_status(identifier: str, body: StateBody, user: User = Depends(curren
 
 @app.post("/api/auth/telegram/link")
 def link_code(user: User = Depends(current_user), db: DBSession = Depends(get_db)):
+    db.execute(select(User).where(User.id == user.id).with_for_update()).scalar_one()
     code = secrets.token_urlsafe(24)
     expires = now() + timedelta(minutes=10)
     db.execute(delete(LinkCode).where(LinkCode.user_id == user.id))
@@ -369,10 +439,13 @@ def bot_identity(body: BotIdentity, db: DBSession = Depends(get_db)):
 
 @app.post("/api/bot/link", dependencies=[Depends(bot_access)])
 def bot_link(body: BotLink, db: DBSession = Depends(get_db)):
+    link = db.scalar(select(LinkCode).where(LinkCode.code_hash == digest(body.code), LinkCode.expires_at > now()))
+    if not link:
+        raise HTTPException(400, "Код недействителен или истёк")
+    target = db.scalar(select(User).where(User.id == link.user_id).with_for_update())
     link = db.scalar(select(LinkCode).where(LinkCode.code_hash == digest(body.code), LinkCode.expires_at > now()).with_for_update())
     if not link:
         raise HTTPException(400, "Код недействителен или истёк")
-    target = db.get(User, link.user_id)
     if target.telegram_id and target.telegram_id != str(body.telegram_id):
         raise HTTPException(409, "Аккаунт уже связан с Telegram")
     previous = db.scalar(select(User).where(User.telegram_id == str(body.telegram_id)).with_for_update())
@@ -384,6 +457,7 @@ def bot_link(body: BotLink, db: DBSession = Depends(get_db)):
         db.delete(previous)
         db.flush()
     target.telegram_id = str(body.telegram_id)
+    db.execute(update(Notification).where(Notification.user_id == target.id, Notification.status == "awaiting_link").values(status="pending", run_at=now()))
     db.delete(link)
     db.commit()
     return {"token": new_session(db, target), "user": user_json(target)}
