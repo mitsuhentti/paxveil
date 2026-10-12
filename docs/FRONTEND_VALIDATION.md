@@ -1,5 +1,9 @@
 # Frontend validation
 
+## Design update, 12 October 2026
+
+The delivered frontend now uses the revised identity, light default and dark theme, compact Russian copy and responsive report layout. [DESIGN_REVIEW.md](DESIGN_REVIEW.md) records the changed behavior, bounded browser checks and current screenshots. The final production build passed. The original QA project and one saved report with three findings remained available after the final ordinary stop/start. Earlier sections below are dated validation history of the previous presentation.
+
 Validated on 2026-10-10 and 2026-10-11 against the real FastAPI / PostgreSQL service. Browser interactions used the in-app browser with Playwright locators; product responses were never mocked.
 
 Final `npm run typecheck` and `npm run build` were repeated successfully on 2026-10-11 against the delivered source. The frontend server was left stopped during the shared startup-script verification.

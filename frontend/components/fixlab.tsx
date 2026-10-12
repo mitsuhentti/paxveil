@@ -1,22 +1,221 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { FlaskConical, ArrowRight, LoaderCircle, RefreshCw } from "lucide-react";
+import { FlaskConical, ArrowRight, LoaderCircle, RefreshCw, Info } from "lucide-react";
 import { api } from "@/lib/api";
 import type { FixResult, Job, Scan } from "@/lib/types";
-import { ErrorBanner, valueText, statusLabel } from "./ui";
-const strategies: Record<string, { title: string; detail: string }> = { "Minimal Change": { title: "Minimal Change", detail: "Минимум изменений" }, "Balanced": { title: "Balanced", detail: "Баланс покрытия и изменений" }, "Maximum Coverage": { title: "Maximum Coverage", detail: "Максимальное покрытие" }, minimal: { title: "Minimal Change", detail: "Минимум изменений" }, balanced: { title: "Balanced", detail: "Баланс покрытия и изменений" }, maximum: { title: "Maximum Coverage", detail: "Максимальное покрытие" } };
-export function FixLab({ scan }: { scan: Scan }) {
-  const [job, setJob] = useState<Job | null>(null); const [result, setResult] = useState<FixResult | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
-  useEffect(() => { setResult(null); setJob(null); setError(""); }, [scan.id]);
-  useEffect(() => {
-    if (!job || !["queued", "pending", "retry", "running"].includes(job.status)) return;
-    let cancelled = false; const timer = setInterval(async () => { try { const data = await api<Job>(`/jobs/${job.id}`); if (cancelled) return; setJob(data); if (["succeeded", "completed", "partial"].includes(data.status)) { setResult(data.result as FixResult); setBusy(false); } if (data.status === "failed") { setError(data.error || "Расчёт не завершён"); setBusy(false); } } catch (e) { if (!cancelled) { setError(e instanceof Error ? e.message : "Не удалось получить результат"); setBusy(false); } } }, 2000);
-    return () => { cancelled = true; clearInterval(timer); };
-  }, [job]);
-  async function run() { setBusy(true); setError(""); try { const data = await api<{ id: string; status: string }>(`/scans/${scan.id}/fixlab`, { method: "POST" }); const next = await api<Job>(`/jobs/${data.id}`); setJob(next); if (["succeeded", "completed", "partial"].includes(next.status)) { setResult(next.result as FixResult); setBusy(false); } else if (next.status === "failed") { setError(next.error || "Расчёт не завершён"); setBusy(false); } } catch (e) { setError(e instanceof Error ? e.message : "Не удалось запустить FixLab"); setBusy(false); } }
-  return <section><div className="tool-intro"><div><p className="eyebrow">UPDATE SIMULATION</p><h2>Сравните путь к исправлению.</h2><p>FixLab проверяет существование целевых версий, разрешает зависимости по метаданным и повторно анализирует полученный набор.</p></div><button className="button primary" disabled={busy} onClick={run}>{busy ? <LoaderCircle size={17} className="spin"/> : result ? <RefreshCw size={17}/> : <FlaskConical size={17}/>} {busy ? "Рассчитываем…" : result ? "Пересчитать" : "Рассчитать стратегии"}</button></div>{error && <ErrorBanner message={error} retry={run}/>}<div className="analysis-note"><FlaskConical size={16}/> Моделирование не выполняет код и тесты приложения. Результат не гарантирует совместимость обновлений.</div>{busy && <div role="status" className="job-progress"><LoaderCircle size={20} className="spin"/><div><strong>Обращаемся к PyPI и OSV</strong><p>{job ? statusLabel(job.status) : "Создаём задание"}. Разрешение зависимостей может занять несколько минут.</p></div></div>}
-  {!result && !busy && <div className="strategy-placeholder">{["Minimal Change", "Balanced", "Maximum Coverage"].map((name, i) => <div key={name}><span className="mono">0{i + 1}</span><h3>{name}</h3><p>{strategies[name].detail}</p><span className="muted">Результаты появятся после расчёта</span></div>)}</div>}
-  {result && <><div className="strategies">{result.strategies.map(s => <article className="strategy" key={s.name}><header><p className="eyebrow">{strategies[s.name]?.detail || "Стратегия обновления"}</p><h3>{strategies[s.name]?.title || s.name}</h3><span className={`status-badge ${s.status === "resolved" ? "completed" : "partial"}`}>{({ resolved: "Разрешено по метаданным", conflict: "Конфликт зависимостей", insufficient_data: "Недостаточно данных" }[s.status] || s.status)}</span></header><div className="fix-count"><div><span>До</span><strong>{s.before.findings}</strong></div><ArrowRight size={21}/><div><span>После</span><strong>{s.after ? s.after.findings : "—"}</strong></div></div><p className="form-hint">Известные уязвимости в рассчитанном наборе</p><h4>Предлагаемые изменения</h4>{s.updates.length ? <ul className="update-list">{s.updates.map((u, i) => <li key={i}><strong className="mono">{u.package}</strong><span className="mono">{u.from} <ArrowRight size={12}/> {u.to}</span></li>)}</ul> : <p className="muted">Достоверные обновления не предложены.</p>}<p className="strategy-reason">{s.reason}</p>{s.conflicts.length > 0 && <div className="conflict-list"><h4>Конфликты</h4>{s.conflicts.map((x, i) => <pre key={i}>{valueText(x)}</pre>)}</div>}{s.uncertainties.length > 0 && <details><summary>Неопределённости ({s.uncertainties.length})</summary>{s.uncertainties.map((x, i) => <p key={i}>{valueText(x)}</p>)}</details>}<details><summary>Изменения графа</summary><pre className="data-block">{valueText(s.graph_changes)}</pre></details></article>)}</div>{result.limitations.length > 0 && <div className="limitations"><div><strong>Границы проверки</strong><ul>{result.limitations.map((x, i) => <li key={i}>{x}</li>)}</ul></div></div>}</>}
-  </section>;
+import { ErrorBanner, valueText, statusLabel, displayText } from "./ui";
+
+const minimal = { title: "Точечное обновление", detail: "Обновления в пределах текущей minor-версии" };
+const balanced = { title: "В пределах major-версии", detail: "Последние стабильные версии текущей major-ветки" };
+const maximum = { title: "Полное обновление", detail: "Последние стабильные версии, включая новые major-ветки" };
+const strategies: Record<string, { title: string; detail: string }> = {
+  "Minimal Change": minimal,
+  "Balanced": balanced,
+  "Maximum Coverage": maximum,
+  minimal,
+  balanced,
+  maximum,
+};
+const finishedStatuses = ["succeeded", "completed", "partial"];
+
+function GraphChanges({ value }: { value: unknown }) {
+  if (!value || typeof value !== "object") return <p className="muted">Нет данных</p>;
+  const changes = value as Record<string, unknown>;
+  const sections = [
+    { key: "changed", title: "Обновлены" },
+    { key: "added", title: "Добавлены" },
+    { key: "removed", title: "Удалены" },
+  ];
+
+  if (!sections.some(section => Array.isArray(changes[section.key]))) {
+    return <pre className="data-block">{valueText(value)}</pre>;
+  }
+  const total = sections.reduce((count, section) => count + (Array.isArray(changes[section.key]) ? (changes[section.key] as unknown[]).length : 0), 0);
+  if (total === 0) return <p className="muted">Состав пакетов не изменился.</p>;
+
+  return <>{sections.map(section => {
+    const rows = changes[section.key];
+    if (!Array.isArray(rows) || !rows.length) return null;
+    return (
+      <div key={section.key}>
+        <h4>{section.title}</h4>
+        <ul className="update-list">
+          {rows.map((row, index) => {
+            if (!row || typeof row !== "object") return <li key={index}>{valueText(row)}</li>;
+            const item = row as Record<string, unknown>;
+            return (
+              <li key={index}>
+                <strong className="mono">{valueText(item.package)}</strong>
+                <span className="mono">
+                  {section.key === "changed"
+                    ? <>{valueText(item.from)} <ArrowRight size={12} /> {valueText(item.to)}</>
+                    : valueText(item.version)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  })}</>;
 }
 
+export function FixLab({ scan }: { scan: Scan }) {
+  const [job, setJob] = useState<Job | null>(null);
+  const [result, setResult] = useState<FixResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setResult(null);
+    setJob(null);
+    setError("");
+    setBusy(false);
+  }, [scan.id]);
+
+  useEffect(() => {
+    if (!job || !["queued", "pending", "retry", "running"].includes(job.status)) return;
+    let cancelled = false;
+    const timer = setInterval(async () => {
+      try {
+        const data = await api<Job>(`/jobs/${job.id}`);
+        if (cancelled) return;
+        setJob(data);
+        if (finishedStatuses.includes(data.status)) {
+          setResult(data.result as FixResult);
+          setBusy(false);
+        }
+        if (data.status === "failed") {
+          setError(data.error || "Расчёт завершился с ошибкой");
+          setBusy(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setError(error instanceof Error ? error.message : "Не удалось получить результат");
+          setBusy(false);
+        }
+      }
+    }, 2000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [job]);
+
+  async function run() {
+    setBusy(true);
+    setError("");
+    setResult(null);
+    try {
+      const data = await api<{ id: string; status: string }>(`/scans/${scan.id}/fixlab`, { method: "POST" });
+      const next = await api<Job>(`/jobs/${data.id}`);
+      setJob(next);
+      if (finishedStatuses.includes(next.status)) {
+        setResult(next.result as FixResult);
+        setBusy(false);
+      } else if (next.status === "failed") {
+        setError(next.error || "Расчёт завершился с ошибкой");
+        setBusy(false);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Не удалось запустить расчёт");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section>
+      <div className="tool-intro">
+        <div>
+          <h2>Варианты обновления</h2>
+          <p>FixLab подбирает версии, проверяет совместимость зависимостей по метаданным и повторяет поиск уязвимостей.</p>
+        </div>
+        <button className="button primary" disabled={busy} onClick={run}>
+          {busy ? <LoaderCircle size={17} className="spin" /> : result ? <RefreshCw size={17} /> : <FlaskConical size={17} />}
+          {busy ? "Расчёт идёт" : result ? "Пересчитать" : "Рассчитать варианты"}
+        </button>
+      </div>
+      {error && <ErrorBanner message={error} retry={run} />}
+      <p className="analysis-note">
+        <Info size={16} /> Код и тесты приложения не запускаются. Совместимость обновлений нужно проверить перед применением.
+      </p>
+      {busy && (
+        <div role="status" className="job-progress">
+          <LoaderCircle size={20} className="spin" />
+          <div>
+            <strong>{job ? statusLabel(job.status) : "Создание задания"}</strong>
+            <p>PyPI, разрешение зависимостей и повторная проверка OSV. Это может занять несколько минут.</p>
+          </div>
+        </div>
+      )}
+      {!result && !busy && (
+        <div className="strategy-placeholder">
+          {[minimal, balanced, maximum].map((strategy, index) => (
+            <div key={strategy.title}>
+              <span className="strategy-label">{String.fromCharCode(65 + index)}</span>
+              <h3>{strategy.title}</h3>
+              <p>{strategy.detail}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {result && (
+        <>
+          <div className="strategies">
+            {result.strategies.map((strategy, index) => (
+              <article className="strategy" key={strategy.name}>
+                <header>
+                  <span className="strategy-label">{String.fromCharCode(65 + index)}</span>
+                  <h3>{strategies[strategy.name]?.title || strategy.name}</h3>
+                  <span className={`status-badge ${strategy.status === "resolved" ? "completed" : "partial"}`}>
+                    {({ resolved: "Расчёт завершён", conflict: "Конфликт зависимостей", insufficient_data: "Недостаточно данных" }[strategy.status] || strategy.status)}
+                  </span>
+                </header>
+                <div className="fix-count">
+                  <div><span>Сейчас</span><strong>{strategy.before.findings}</strong></div>
+                  <ArrowRight size={21} />
+                  <div><span>После обновления</span>
+                    <strong className={strategy.status === "resolved" && strategy.after?.findings === 0
+                      ? "text-success" : strategy.after?.findings ? "text-danger" : "muted"}>
+                      {strategy.after ? strategy.after.findings : "н/д"}
+                    </strong>
+                  </div>
+                </div>
+                <p className="form-hint">Известные уязвимости</p>
+                <h4>Изменения версий</h4>
+                {strategy.updates.length ? (
+                  <ul className="update-list">
+                    {strategy.updates.map((update, updateIndex) => (
+                      <li key={updateIndex}>
+                        <strong className="mono">{update.package}</strong>
+                        <span className="mono">{update.from} <ArrowRight size={12} /> {update.to}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="muted">Подходящие обновления не найдены.</p>}
+                <p className="strategy-reason">{displayText(strategy.reason)}</p>
+                {strategy.conflicts.length > 0 && (
+                  <div className="conflict-list">
+                    <h4>Конфликты</h4>
+                    {strategy.conflicts.map((conflict, conflictIndex) => <pre key={conflictIndex}>{valueText(conflict)}</pre>)}
+                  </div>
+                )}
+                {strategy.uncertainties.length > 0 && (
+                  <details>
+                    <summary>Ограничения расчёта ({strategy.uncertainties.length})</summary>
+                    <ul>{strategy.uncertainties.map((uncertainty, uncertaintyIndex) => <li key={uncertaintyIndex}>{valueText(uncertainty)}</li>)}</ul>
+                  </details>
+                )}
+                <details><summary>Изменения состава пакетов</summary><GraphChanges value={strategy.graph_changes} /></details>
+              </article>
+            ))}
+          </div>
+          {result.limitations.length > 0 && (
+            <details className="limitations report-limitations">
+              <summary><Info size={17} /> Условия расчёта</summary>
+              <ul>{result.limitations.map((limitation, index) => <li key={index}>{displayText(limitation)}</li>)}</ul>
+            </details>
+          )}
+        </>
+      )}
+    </section>
+  );
+}

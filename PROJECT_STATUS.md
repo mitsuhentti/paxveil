@@ -1,6 +1,8 @@
 # PAXVEIL project status
 
-Snapshot: **11 October 2026**. Source repository: `outputs/paxveil`. The prepared development runtime is `work/runtime`, beside `outputs`; it contains the project Python environment, PostgreSQL cluster, logs and process manifest. Secrets remain in the ignored repository-root `.env` and are not included here.
+Snapshot: **12 October 2026**. Source repository: `outputs/paxveil`. The prepared development runtime is `work/runtime`, beside `outputs`; it contains the project Python environment, PostgreSQL cluster, logs and process manifest. Secrets remain in the ignored repository-root `.env` and are not included here.
+
+The interface and brand were redesigned on 11-12 October: a constructed P mark, light/cobalt and dark themes, revised Russian copy and responsive working screens. The new icon, name and description were applied to the configured Telegram bot and verified through its API. The affected bot tests reported 24 passes; production frontend build, browser checks and final ordinary stop/start passed. See [DESIGN_REVIEW.md](docs/DESIGN_REVIEW.md) and [profile evidence](docs/TELEGRAM_BRAND_VALIDATION.json). The full 122-pass/2-skip backend run below remains dated 11 October.
 
 ## Implemented behavior
 

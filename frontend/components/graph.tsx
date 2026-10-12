@@ -1,27 +1,185 @@
 "use client";
+
 import { useMemo, useState } from "react";
-import { Search, GitBranch, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Search, GitBranch, ZoomIn, ZoomOut, RotateCcw, Info } from "lucide-react";
 import type { Report } from "@/lib/types";
 import { Empty } from "./ui";
+
+const nodeWidth = 240;
+const nodeHeight = 64;
+
 export function DependencyGraph({ report }: { report: Report }) {
-  const [query, setQuery] = useState(""); const [selected, setSelected] = useState<string | null>(null); const [zoom, setZoom] = useState(1);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
   const { nodes, edges } = report.graph;
+
   const path = useMemo(() => {
     if (!selected) return [];
-    const roots = nodes.filter(n => n.direct).map(n => n.id); const queue = roots.map(x => [x]); const visited = new Set<string>();
-    while (queue.length) { const p = queue.shift()!; const tail = p[p.length - 1]; if (tail === selected) return p; if (visited.has(tail)) continue; visited.add(tail); edges.filter(e => e.source === tail).forEach(e => queue.push([...p, e.target])); }
+    const queue = nodes.filter(node => node.direct).map(node => [node.id]);
+    const visited = new Set<string>();
+    while (queue.length) {
+      const current = queue.shift()!;
+      const tail = current[current.length - 1];
+      if (tail === selected) return current;
+      if (visited.has(tail)) continue;
+      visited.add(tail);
+      edges.filter(edge => edge.source === tail).forEach(edge => queue.push([...current, edge.target]));
+    }
     return [selected];
   }, [nodes, edges, selected]);
+
   const positions = useMemo(() => {
-    const map = new Map<string, { x: number; y: number }>(); const levels = new Map<string, number>(); const queue = nodes.filter(n => n.direct).map(n => ({ id: n.id, level: 0 }));
-    while (queue.length) { const n = queue.shift()!; if (levels.has(n.id)) continue; levels.set(n.id, n.level); edges.filter(e => e.source === n.id).forEach(e => queue.push({ id: e.target, level: Math.min(n.level + 1, 4) })); }
-    nodes.forEach(n => { if (!levels.has(n.id)) levels.set(n.id, 0); });
-    for (let level = 0; level <= 4; level++) { const group = nodes.filter(n => levels.get(n.id) === level); group.forEach((n, i) => map.set(n.id, { x: 30 + level * 255, y: 35 + i * 82 })); }
+    const map = new Map<string, { x: number; y: number }>();
+    const levels = new Map<string, number>();
+    const queue = nodes.filter(node => node.direct).map(node => ({ id: node.id, level: 0 }));
+    while (queue.length) {
+      const current = queue.shift()!;
+      if (levels.has(current.id)) continue;
+      levels.set(current.id, current.level);
+      edges.filter(edge => edge.source === current.id).forEach(edge => {
+        queue.push({ id: edge.target, level: Math.min(current.level + 1, 4) });
+      });
+    }
+    nodes.forEach(node => { if (!levels.has(node.id)) levels.set(node.id, 0); });
+    for (let level = 0; level <= 4; level++) {
+      const group = nodes.filter(node => levels.get(node.id) === level);
+      group.forEach((node, index) => map.set(node.id, { x: 32 + level * 300, y: 32 + index * 96 }));
+    }
     return map;
   }, [nodes, edges]);
-  const maxX = Math.max(700, ...Array.from(positions.values()).map(p => p.x + 240)); const maxY = Math.max(360, ...Array.from(positions.values()).map(p => p.y + 80));
-  const vulnerable = new Set(report.findings.map(f => `${f.package}==${f.version}`)); const selectedNode = nodes.find(n => n.id === selected);
-  if (!nodes.length) return <Empty title="Граф недоступен" detail="Источники не вернули достоверные связи для этого сканирования. Проверьте ограничения отчёта."/>;
-  return <section><div className="graph-toolbar"><label className="search-box"><Search size={16}/><input aria-label="Найти зависимость в графе" placeholder="Найти пакет в графе…" value={query} onChange={e => setQuery(e.target.value)}/></label><div className="button-group"><button className="icon-button" aria-label="Уменьшить граф" onClick={() => setZoom(Math.max(.5, zoom - .2))}><ZoomOut size={18}/></button><span className="mono">{Math.round(zoom * 100)}%</span><button className="icon-button" aria-label="Увеличить граф" onClick={() => setZoom(Math.min(2, zoom + .2))}><ZoomIn size={18}/></button><button className="icon-button" aria-label="Сбросить масштаб и выбор" onClick={() => { setZoom(1); setSelected(null); setQuery(""); }}><RotateCcw size={16}/></button></div></div><p className="form-hint">Выберите узел для просмотра пути. Прямые зависимости отмечены бирюзовым, известные уязвимости — красным. Прокрутите схему для просмотра всех узлов.</p><div className="graph-canvas"><svg width={maxX * zoom} height={maxY * zoom} viewBox={`0 0 ${maxX} ${maxY}`} role="group" aria-label="Граф зависимостей"><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 10 5 0 10" fill="var(--graph-edge)"/></marker><pattern id="graph-dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="var(--border)"/></pattern></defs><rect width="100%" height="100%" fill="url(#graph-dots)"/>{edges.map((edge, i) => { const a = positions.get(edge.source), b = positions.get(edge.target); if (!a || !b) return null; const active = path.includes(edge.source) && path.includes(edge.target); return <path key={i} d={`M${a.x + 210} ${a.y + 25} C${a.x + 242} ${a.y + 25}, ${b.x - 35} ${b.y + 25}, ${b.x} ${b.y + 25}`} fill="none" stroke={active ? "var(--accent)" : "var(--graph-edge)"} strokeWidth={active ? 2 : 1.2} markerEnd="url(#arrow)"/>; })}{nodes.map(node => { const p = positions.get(node.id)!; const matches = !query || node.name.toLowerCase().includes(query.toLowerCase()); const color = vulnerable.has(node.id) ? "var(--danger)" : node.direct ? "var(--accent)" : "var(--graph-edge)"; return <g key={node.id} transform={`translate(${p.x} ${p.y})`} className="graph-node" opacity={matches ? 1 : .25} role="button" tabIndex={0} aria-label={`${node.name} ${node.version || "версия неизвестна"}`} onClick={() => setSelected(node.id)} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(node.id); } }}><rect width="210" height="52" rx="4" fill="var(--surface)" stroke={selected === node.id ? "var(--text)" : color} strokeWidth={selected === node.id ? 2 : 1}/><circle cx="15" cy="18" r="3" fill={color}/><text x="26" y="23" fill="var(--text)" fontSize="12" fontFamily="monospace">{node.name.length > 23 ? `${node.name.slice(0, 21)}…` : node.name}</text><text x="26" y="41" fill="var(--muted)" fontSize="10" fontFamily="monospace">{node.version || "не определена"} · {node.direct === null ? "origin unknown" : node.direct ? "direct" : "transitive"}</text></g>; })}</svg></div>{selectedNode && <div className="graph-detail"><GitBranch size={19}/><div><strong>{selectedNode.name} <span className="mono muted">{selectedNode.version}</span></strong><p>{path.join(" → ")}</p>{path.length === 1 && !selectedNode.direct && <span className="form-hint">Путь от прямой зависимости не подтверждён источником.</span>}</div></div>}<div className="graph-legend"><span><i className="accent-dot"/> Прямая</span><span><i className="muted-dot"/> Транзитивная</span><span><i className="danger-dot"/> Известная уязвимость</span><span className="mono">{nodes.length} узлов · {edges.length} связей</span></div></section>;
-}
 
+  const maxX = Math.max(700, ...Array.from(positions.values()).map(position => position.x + nodeWidth + 32));
+  const maxY = Math.max(300, ...Array.from(positions.values()).map(position => position.y + nodeHeight + 32));
+  const vulnerable = new Set(report.findings.map(finding => `${finding.package}==${finding.version}`));
+  const selectedNode = nodes.find(node => node.id === selected);
+  const matchingNodes = nodes.filter(node => !query || node.name.toLowerCase().includes(query.toLowerCase())).length;
+
+  if (!nodes.length) {
+    return <Empty title="Нет данных для графа" detail="В этом отчёте нет зависимостей, которые можно отобразить." />;
+  }
+
+  return (
+    <section className="report-section">
+      <div className="graph-overview report-title">
+        <h2>Граф зависимостей</h2>
+        <span className="muted">Пакеты: {nodes.length} · Связи: {edges.length}</span>
+      </div>
+      <div className="graph-toolbar">
+        <label className="search-box">
+          <Search size={17} />
+          <input
+            aria-label="Найти зависимость в графе"
+            placeholder="Название пакета"
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+          />
+        </label>
+        <div className="button-group">
+          <button className="icon-button" aria-label="Уменьшить граф" disabled={zoom <= 0.5} onClick={() => setZoom(Math.max(0.5, zoom - 0.2))}>
+            <ZoomOut size={18} />
+          </button>
+          <span className="mono">{Math.round(zoom * 100)}%</span>
+          <button className="icon-button" aria-label="Увеличить граф" disabled={zoom >= 2} onClick={() => setZoom(Math.min(2, zoom + 0.2))}>
+            <ZoomIn size={18} />
+          </button>
+          <button
+            className="icon-button"
+            aria-label="Сбросить масштаб и выбор"
+            onClick={() => { setZoom(1); setSelected(null); setQuery(""); }}
+          ><RotateCcw size={16} /></button>
+        </div>
+      </div>
+      <p className="form-hint">Нажмите на пакет, чтобы увидеть путь от прямой зависимости.</p>
+      {query && matchingNodes === 0 && <p className="graph-empty-note">Пакет с таким названием не найден.</p>}
+      <div className="graph-canvas">
+        <svg width={maxX * zoom} height={maxY * zoom} viewBox={`0 0 ${maxX} ${maxY}`} role="group" aria-label="Граф зависимостей">
+          <defs>
+            <marker id="graph-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0 0 10 5 0 10" fill="var(--graph-edge)" />
+            </marker>
+          </defs>
+          {edges.map((edge, index) => {
+            const source = positions.get(edge.source);
+            const target = positions.get(edge.target);
+            if (!source || !target) return null;
+            const pathIndex = path.indexOf(edge.source);
+            const active = pathIndex >= 0 && path[pathIndex + 1] === edge.target;
+            return (
+              <path
+                key={index}
+                d={`M${source.x + nodeWidth} ${source.y + nodeHeight / 2} C${source.x + nodeWidth + 30} ${source.y + nodeHeight / 2}, ${target.x - 30} ${target.y + nodeHeight / 2}, ${target.x} ${target.y + nodeHeight / 2}`}
+                fill="none"
+                stroke={active ? "var(--accent)" : "var(--graph-edge)"}
+                strokeWidth={active ? 2 : 1.3}
+                markerEnd="url(#graph-arrow)"
+              />
+            );
+          })}
+          {nodes.map(node => {
+            const position = positions.get(node.id)!;
+            const matches = !query || node.name.toLowerCase().includes(query.toLowerCase());
+            const color = vulnerable.has(node.id) ? "var(--danger)" : node.direct ? "var(--accent)" : "var(--graph-edge)";
+            const origin = node.direct === null ? "Тип неизвестен" : node.direct ? "Прямая" : "Транзитивная";
+            return (
+              <g
+                key={node.id}
+                transform={`translate(${position.x} ${position.y})`}
+                className="graph-node"
+                opacity={matches ? 1 : 0.25}
+                role="button"
+                tabIndex={0}
+                aria-label={`${node.name} ${node.version || "версия неизвестна"}, ${origin.toLowerCase()}`}
+                aria-pressed={selected === node.id}
+                onClick={() => setSelected(node.id)}
+                onKeyDown={event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelected(node.id);
+                  }
+                }}
+              >
+                <rect
+                  width={nodeWidth}
+                  height={nodeHeight}
+                  rx="7"
+                  fill="var(--surface)"
+                  stroke={selected === node.id ? "var(--text)" : "var(--border)"}
+                  strokeWidth={selected === node.id ? 2 : 1}
+                />
+                <rect x="0" y="14" width="3" height="36" rx="1.5" fill={color} />
+                <text x="18" y="27" fill="var(--text)" fontSize="14" fontWeight="600">
+                  {node.name.length > 25 ? `${node.name.slice(0, 23)}...` : node.name}
+                </text>
+                <text x="18" y="48" fill="var(--muted)" fontSize="12">
+                  {node.version || "Версия неизвестна"} · {origin}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      {selectedNode && (
+        <div className="graph-detail">
+          <GitBranch size={20} />
+          <div>
+            <strong>{selectedNode.name} <span className="mono muted">{selectedNode.version}</span></strong>
+            <p className="mono">{path.join(" → ")}</p>
+            {path.length === 1 && !selectedNode.direct && (
+              <span className="form-hint">Путь от прямой зависимости не подтверждён.</span>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="graph-legend">
+        <span><i className="accent-dot" /> Прямая зависимость</span>
+        <span><i className="muted-dot" /> Остальные пакеты</span>
+        <span><i className="danger-dot" /> Известная уязвимость</span>
+      </div>
+      <p className="analysis-note">
+        <Info size={16} /> Показаны пакеты из загруженного файла и подтверждённые связи между ними.
+        {edges.length === 0 && " Связи в этом отчёте не определены."}
+      </p>
+    </section>
+  );
+}

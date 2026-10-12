@@ -1,26 +1,332 @@
 "use client";
+
 import { useMemo, useState } from "react";
 import { Search, ArrowUpDown, ChevronRight, AlertTriangle, Info, LoaderCircle } from "lucide-react";
 import type { Finding, Report, Severity } from "@/lib/types";
 import { api, formatDate, json } from "@/lib/api";
-import { Empty, Modal, External, valueText, ErrorBanner } from "./ui";
-const severityLabels: Record<Severity, string> = { critical: "Критическая", high: "Высокая", medium: "Средняя", low: "Низкая", unknown: "Неизвестна" };
-export function ReportView({ report, projectId, changed }: { report: Report; projectId?: string; changed?: () => void }) {
-  const [query, setQuery] = useState(""); const [severity, setSeverity] = useState("all"); const [sort, setSort] = useState("priority"); const [selected, setSelected] = useState<Finding | null>(null); const [dependencyQuery, setDependencyQuery] = useState("");
-  const findings = useMemo(() => report.findings.filter(f => (severity === "all" || f.severity === severity) && `${f.id} ${f.aliases.join(" ")} ${f.package} ${f.summary}`.toLowerCase().includes(query.toLowerCase())).sort((a, b) => sort === "package" ? a.package.localeCompare(b.package) : sort === "epss" ? (b.epss || 0) - (a.epss || 0) : b.priority - a.priority), [report.findings, severity, query, sort]);
-  const dependencies = report.dependencies.filter(d => `${d.name} ${d.version}`.toLowerCase().includes(dependencyQuery.toLowerCase()));
-  const [statusBusy, setStatusBusy] = useState(false); const [statusError, setStatusError] = useState("");
-  async function changeStatus(status: string) { if (!selected || !projectId) return; setStatusBusy(true); setStatusError(""); try { const result = await api<{ status: string }>(`/projects/${projectId}/finding-status`, { method: "PUT", body: json({ advisory_id: selected.id, package: selected.package, status }) }); setSelected({ ...selected, status: result.status }); changed?.(); } catch (e) { setStatusError(e instanceof Error ? e.message : "Не удалось изменить статус"); } finally { setStatusBusy(false); } }
-  return <div><div className="report-metrics"><div><span>Зависимости</span><strong>{report.stats.dependencies}</strong><small>точные и неопределённые</small></div><div><span>Известные уязвимости</span><strong className={report.findings.length ? "text-danger" : ""}>{report.stats.findings}</strong><small>по данным источников</small></div><div><span>Высокий приоритет</span><strong>{report.findings.filter(f => f.priority >= 70).length}</strong><small>оценка ≥ 70 / 100</small></div><div><span>Длительность</span><strong>{report.stats.duration_seconds.toFixed(1)}<em>с</em></strong><small>Python {report.environment.python_version} · {report.environment.platform}</small></div></div>
-  {report.warnings.length > 0 && <div className="limitations"><AlertTriangle size={19}/><div><strong>Ограничения анализа</strong><ul>{report.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div></div>}
-  <div className="report-title"><h2>Известные уязвимости <span className="count">{report.findings.length}</span></h2><span className="meta-pill">{({complete:"Полное покрытие",recorded_versions_checked:"Проверены заданные версии",partial:"Частичное покрытие",incomplete:"Неполные данные",insufficient_data:"Недостаточно данных"}[report.completeness] || "Проверьте ограничения")}</span></div><div className="table-toolbar"><label className="search-box"><Search size={16}/><input aria-label="Поиск уязвимостей" placeholder="Пакет, CVE или advisory…" value={query} onChange={e => setQuery(e.target.value)}/></label><label className="sr-only" htmlFor="severity">Серьёзность</label><select id="severity" value={severity} onChange={e => setSeverity(e.target.value)}><option value="all">Любая серьёзность</option>{Object.entries(severityLabels).map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select><div className="sort-control"><ArrowUpDown size={14}/><select aria-label="Сортировка уязвимостей" value={sort} onChange={e => setSort(e.target.value)}><option value="priority">По приоритету</option><option value="epss">По EPSS</option><option value="package">По пакету</option></select></div></div>
-  {findings.length ? <div className="table-scroll"><table className="findings-table"><thead><tr><th>Пакет / advisory</th><th>Серьёзность</th><th>Приоритет</th><th>CVSS</th><th>EPSS</th><th>Исправление</th><th><span className="sr-only">Подробнее</span></th></tr></thead><tbody>{findings.map(f => <tr key={`${f.package}-${f.version}-${f.id}`}><td><button className="table-title" onClick={() => setSelected(f)}>{f.package}<span className="mono">{f.version}</span></button><span className="advisory-id mono">{f.id}</span></td><td><span className={`severity ${f.severity}`}>{severityLabels[f.severity]}</span>{f.kev && <small className="kev">CISA KEV</small>}</td><td><div className="priority-cell"><span>{f.priority}</span><i><b style={{ width: `${f.priority}%` }}/></i></div></td><td className="mono">{f.cvss ?? "—"}</td><td className="mono">{f.epss === null ? "—" : `${(f.epss * 100).toFixed(2)}%`}</td><td className="mono">{f.fixed_versions.slice(0, 2).join(", ") || "не определено"}</td><td><button className="icon-button" aria-label={`Подробнее ${f.id} ${f.package}`} onClick={() => setSelected(f)}><ChevronRight size={18}/></button></td></tr>)}</tbody></table></div> : <Empty title={report.findings.length ? "Ничего не найдено" : "Известные уязвимости не обнаружены"} detail={report.findings.length ? "Измените поисковый запрос или фильтр." : "Вывод относится к определённым версиям и доступным источникам на момент проверки. Проверьте предупреждения и полноту данных."}/>}
-  <p className="analysis-note"><Info size={15}/> Наличие уязвимой версии не подтверждает эксплуатацию в вашем приложении. CVSS описывает серьёзность, EPSS — вероятность эксплуатации CVE.</p>
-  <details className="dependency-list"><summary>Разобранные зависимости <span className="count">{report.dependencies.length}</span></summary><label className="search-box"><Search size={16}/><input aria-label="Поиск в зависимостях" placeholder="Найти зависимость…" value={dependencyQuery} onChange={e => setDependencyQuery(e.target.value)}/></label><div className="table-scroll"><table><thead><tr><th>Пакет</th><th>Версия</th><th>Тип</th><th>Статус / маркер</th></tr></thead><tbody>{dependencies.map((d, i) => <tr key={`${d.name}-${i}`}><td className="mono">{d.name}</td><td className="mono">{d.version || "не определена"}</td><td>{d.direct === null ? "Не определён" : d.direct ? "Прямая" : "Транзитивная"}</td><td>{d.status}{d.marker && <small className="mono">{d.marker}</small>}</td></tr>)}</tbody></table></div></details>
-  <div className="source-status"><h3>Свежесть источников</h3>{report.sources.map((s, i) => <div key={`${s.name}-${i}`}><span className={`status-dot ${["ok", "success", "cached"].includes(s.status) ? "ok" : "warning"}`}/><strong>{s.name}</strong><span>{({ok:"Получено",success:"Получено",cached:"Из кеша",failed:"Недоступен",error:"Ошибка",unavailable:"Недоступен"}[s.status] || s.status)}</span><time>{formatDate(s.fetched_at)}</time>{s.error && <small>{s.error}</small>}</div>)}</div>
-  <Modal open={!!selected} onOpenChange={value => { if (!value) setSelected(null); }} title={selected?.id || "Advisory"} description={selected ? `${selected.package} ${selected.version} · ${severityLabels[selected.severity]}` : ""} wide>{selected && <div className="finding-detail"><h3>{selected.summary || "Описание недоступно"}</h3><div className="detail-grid"><div><span>Приоритет</span><strong>{selected.priority} / 100</strong></div><div><span>CVSS</span><strong>{selected.cvss ?? "нет данных"}</strong></div><div><span>EPSS</span><strong>{selected.epss === null ? "нет данных" : `${(selected.epss * 100).toFixed(2)}%`}</strong></div><div><span>Подтверждённая эксплуатация</span><strong>{selected.kev === true ? "В каталоге CISA KEV" : selected.kev === false ? "Не найдено в KEV" : "Нет данных KEV"}</strong></div></div><div className="finding-status-control"><label>Статус обработки<select aria-label="Статус обработки" value={selected.status} disabled={statusBusy || !projectId} onChange={e => changeStatus(e.target.value)}><option value="open">Открыта</option><option value="investigating">Исследуется</option><option value="accepted">Риск принят</option><option value="resolved">Закрыта</option></select></label>{statusBusy && <LoaderCircle size={16} className="spin"/>}{!projectId && <p className="form-hint">Исторический снимок. Изменить статус можно в последнем отчёте.</p>}</div>{statusError && <ErrorBanner message={statusError}/>}<h4>Почему такой приоритет</h4><ul>{selected.priority_reasons.map((r, i) => <li key={i}>{r}</li>)}</ul><h4>Версии с исправлениями в advisory</h4><p className="mono">{selected.fixed_versions.join(", ") || "Не определены источником"}</p><h4>Затронутые диапазоны</h4><pre className="data-block">{valueText(selected.affected)}</pre><div className="detail-meta"><span>Опубликовано: {formatDate(selected.published)}</span><span>Изменено: {formatDate(selected.modified)}</span><span>EPSS на дату: {selected.epss_date || "нет данных"}</span><span>Статус: {selected.status}</span></div>{selected.aliases.length > 0 && <p className="mono muted">{selected.aliases.join(" · ")}</p>}<h4>Источники</h4><div className="reference-list">{selected.references.map((r, i) => <External key={i} url={typeof r === "string" ? r : r.url}/>)}</div><p className="form-hint">Рекомендуемые версии требуют проверки совместимости. Сравните варианты в FixLab перед изменением зависимостей.</p></div>}</Modal></div>;
+import { Empty, Modal, External, valueText, ErrorBanner, displayText, statusLabel } from "./ui";
+
+const severityLabels: Record<Severity, string> = {
+  critical: "Критическая",
+  high: "Высокая",
+  medium: "Средняя",
+  low: "Низкая",
+  unknown: "Нет оценки",
+};
+const completenessLabels: Record<string, string> = {
+  complete: "Проверка завершена",
+  recorded_versions_checked: "Проверены указанные версии",
+  partial: "Неполные данные",
+  incomplete: "Неполные данные",
+  insufficient_data: "Недостаточно данных",
+};
+const dependencyStatusLabels: Record<string, string> = {
+  active: "Входит в окружение",
+  excluded: "Не входит в окружение",
+  uncertain: "Требует уточнения",
+  unresolved: "Версия неизвестна",
+  unsupported: "Не поддерживается",
+  version_not_found: "Версия не найдена",
+};
+const sourceLabels: Record<string, string> = {
+  ok: "Получены",
+  success: "Получены",
+  cached: "Из кеша",
+  partial: "Частично",
+  failed: "Недоступны",
+  error: "Ошибка",
+  unavailable: "Недоступны",
+};
+const epssText = (value: number | null) => value === null ? "н/д" : `${(value * 100).toFixed(2)}%`;
+
+export function ReportView({
+  report, projectId, changed,
+}: {
+  report: Report;
+  projectId?: string;
+  changed?: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [severity, setSeverity] = useState("all");
+  const [sort, setSort] = useState("priority");
+  const [selected, setSelected] = useState<Finding | null>(null);
+  const [dependencyQuery, setDependencyQuery] = useState("");
+  const [statusBusy, setStatusBusy] = useState(false);
+  const [statusError, setStatusError] = useState("");
+
+  const findings = useMemo(() => {
+    const filtered = report.findings.filter(finding => {
+      const matchesSeverity = severity === "all" || finding.severity === severity;
+      const searchText = `${finding.id} ${finding.aliases.join(" ")} ${finding.package} ${finding.summary}`;
+      return matchesSeverity && searchText.toLowerCase().includes(query.toLowerCase());
+    });
+    return filtered.sort((a, b) => {
+      if (sort === "package") return a.package.localeCompare(b.package);
+      if (sort === "epss") return (b.epss ?? -1) - (a.epss ?? -1);
+      return b.priority - a.priority;
+    });
+  }, [report.findings, severity, query, sort]);
+  const dependencies = report.dependencies.filter(dependency =>
+    `${dependency.name} ${dependency.version}`.toLowerCase().includes(dependencyQuery.toLowerCase()),
+  );
+  const partial = !["complete", "recorded_versions_checked"].includes(report.completeness);
+
+  function openFinding(finding: Finding) {
+    setSelected(finding);
+    setStatusError("");
+  }
+
+  async function changeStatus(status: string) {
+    if (!selected || !projectId) return;
+    setStatusBusy(true);
+    setStatusError("");
+    try {
+      const result = await api<{ status: string }>(`/projects/${projectId}/finding-status`, {
+        method: "PUT",
+        body: json({ advisory_id: selected.id, package: selected.package, status }),
+      });
+      setSelected(current => current?.id === selected.id && current.package === selected.package
+        ? { ...current, status: result.status }
+        : current);
+      changed?.();
+    } catch (error) {
+      setStatusError(error instanceof Error ? error.message : "Не удалось сохранить статус");
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="report-metrics">
+        <div><span>Пакеты</span><strong>{report.stats.dependencies}</strong><small>В загруженном файле</small></div>
+        <div>
+          <span>Уязвимости</span>
+          <strong className={report.findings.length ? "text-danger" : ""}>{report.stats.findings}</strong>
+          <small>Совпадения по версии</small>
+        </div>
+        <div>
+          <span>Высокий приоритет</span>
+          <strong>{report.findings.filter(finding => finding.priority >= 70).length}</strong>
+          <small>От 70 баллов из 100</small>
+        </div>
+        <div>
+          <span>Время проверки</span>
+          <strong>{report.stats.duration_seconds.toFixed(1)}<em>с</em></strong>
+          <small>Python {report.environment.python_version} · {report.environment.platform}</small>
+        </div>
+      </div>
+
+      <section className="report-section">
+        <div className="report-title">
+          <h2>Уязвимости <span className="count">{report.findings.length}</span></h2>
+          <span className="meta-pill">{completenessLabels[report.completeness] || "Проверьте ограничения"}</span>
+        </div>
+        {partial && (
+          <p className="coverage-notice">
+            <AlertTriangle size={16} /> Часть данных недоступна. Подробности в ограничениях проверки.
+          </p>
+        )}
+        <div className="table-toolbar">
+          <label className="search-box">
+            <Search size={17} />
+            <input
+              aria-label="Поиск уязвимостей"
+              placeholder="Пакет или CVE"
+              value={query}
+              onChange={event => setQuery(event.target.value)}
+            />
+          </label>
+          <label className="sr-only" htmlFor="severity">Уровень риска</label>
+          <select id="severity" value={severity} onChange={event => setSeverity(event.target.value)}>
+            <option value="all">Все уровни риска</option>
+            {Object.entries(severityLabels).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
+          </select>
+          <div className="sort-control">
+            <ArrowUpDown size={15} />
+            <select aria-label="Сортировка уязвимостей" value={sort} onChange={event => setSort(event.target.value)}>
+              <option value="priority">По приоритету</option>
+              <option value="epss">По EPSS</option>
+              <option value="package">По пакету</option>
+            </select>
+          </div>
+        </div>
+        {findings.length ? (
+          <div className="table-scroll">
+            <table className="findings-table">
+              <thead>
+                <tr>
+                  <th>Пакет и уязвимость</th><th>Уровень риска</th><th>Приоритет</th>
+                  <th>CVSS</th><th>EPSS</th><th>Исправлено в</th><th><span className="sr-only">Подробнее</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {findings.map(finding => (
+                  <tr key={`${finding.package}-${finding.version}-${finding.id}`}>
+                    <td>
+                      <button className="table-title" onClick={() => openFinding(finding)}>
+                        {finding.package}<span className="mono">{finding.version}</span>
+                      </button>
+                      <span className="advisory-id mono">{finding.id}</span>
+                    </td>
+                    <td>
+                      <span className={`severity ${finding.severity}`}>{severityLabels[finding.severity]}</span>
+                      {finding.kev === true && <small className="kev">CISA KEV</small>}
+                    </td>
+                    <td>
+                      <div className="priority-cell">
+                        <span>{finding.priority}</span>
+                        <i aria-hidden="true"><b style={{ width: `${finding.priority}%` }} /></i>
+                      </div>
+                    </td>
+                    <td className="mono">{finding.cvss ?? "н/д"}</td>
+                    <td className="mono">{epssText(finding.epss)}</td>
+                    <td className="mono">{finding.fixed_versions.slice(0, 2).join(", ") || "н/д"}</td>
+                    <td>
+                      <button className="icon-button" aria-label={`Подробнее ${finding.id} ${finding.package}`} onClick={() => openFinding(finding)}>
+                        <ChevronRight size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty
+            title={report.findings.length ? "Нет совпадений с фильтром" : "Известные уязвимости не найдены"}
+            detail={report.findings.length
+              ? "Измените запрос или выберите другой уровень риска."
+              : "Результат относится к указанным версиям и доступным источникам. Проверьте ограничения ниже."}
+          />
+        )}
+      </section>
+
+      <p className="analysis-note">
+        <Info size={16} /> CVSS оценивает серьёзность, EPSS оценивает вероятность эксплуатации CVE. Использование уязвимого кода в приложении не проверялось.
+      </p>
+      {report.warnings.length > 0 && (
+        <details className="limitations report-limitations">
+          <summary><AlertTriangle size={17} /> Ограничения проверки <span className="count">{report.warnings.length}</span></summary>
+          <ul>{report.warnings.map((warning, index) => <li key={index}>{displayText(warning)}</li>)}</ul>
+        </details>
+      )}
+      <details className="dependency-list">
+        <summary>Пакеты из файла <span className="count">{report.dependencies.length}</span></summary>
+        <label className="search-box">
+          <Search size={17} />
+          <input
+            aria-label="Поиск в зависимостях"
+            placeholder="Название пакета"
+            value={dependencyQuery}
+            onChange={event => setDependencyQuery(event.target.value)}
+          />
+        </label>
+        <div className="table-scroll">
+          <table>
+            <thead><tr><th>Пакет</th><th>Версия</th><th>Тип зависимости</th><th>Статус</th></tr></thead>
+            <tbody>
+              {dependencies.map((dependency, index) => (
+                <tr key={`${dependency.name}-${index}`}>
+                  <td className="mono">{dependency.name}</td>
+                  <td className="mono">{dependency.version || "Не указана"}</td>
+                  <td>{dependency.direct === null ? "Не определён" : dependency.direct ? "Прямая" : "Транзитивная"}</td>
+                  <td>
+                    {dependencyStatusLabels[dependency.status] || dependency.status}
+                    {dependency.marker && <small className="mono">{dependency.marker}</small>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <section className="source-status report-section">
+        <div className="report-title"><h2>Источники данных</h2></div>
+        <div className="table-scroll">
+          <table className="source-table">
+            <thead><tr><th>Источник</th><th>Данные</th><th>Получены</th></tr></thead>
+            <tbody>
+              {report.sources.map((source, index) => (
+                <tr key={`${source.name}-${index}`}>
+                  <td><strong>{source.name}</strong></td>
+                  <td>
+                    <span className={`status-dot ${["ok", "success", "cached"].includes(source.status) ? "ok" : "warning"}`} />
+                    {sourceLabels[source.status] || source.status}
+                  </td>
+                  <td>
+                    <time>{formatDate(source.fetched_at)}</time>
+                    {source.error && <small>{displayText(source.error)}</small>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <Modal
+        open={!!selected}
+        onOpenChange={open => { if (!open) setSelected(null); }}
+        title={selected?.id || "Уязвимость"}
+        description={selected ? `${selected.package} ${selected.version} · ${severityLabels[selected.severity]}` : ""}
+        wide
+      >
+        {selected && (
+          <div className="finding-detail">
+            <div className="finding-heading"><h3>{selected.summary ? displayText(selected.summary) : "Описание отсутствует"}</h3></div>
+            <div className="detail-grid">
+              <div><span>Приоритет</span><strong>{selected.priority} / 100</strong></div>
+              <div><span>CVSS</span><strong>{selected.cvss ?? "Нет данных"}</strong></div>
+              <div><span>EPSS</span><strong>{selected.epss === null ? "Нет данных" : epssText(selected.epss)}</strong></div>
+              <div>
+                <span>Каталог CISA KEV</span>
+                <strong>{selected.kev === true ? "Есть в каталоге" : selected.kev === false ? "Нет в каталоге" : "Нет данных"}</strong>
+              </div>
+            </div>
+            <div className="finding-status-control finding-processing">
+              <label>
+                Статус обработки
+                <select
+                  aria-label="Статус обработки"
+                  value={selected.status}
+                  disabled={statusBusy || !projectId}
+                  onChange={event => changeStatus(event.target.value)}
+                >
+                  <option value="open">Открыта</option><option value="investigating">На проверке</option>
+                  <option value="accepted">Риск принят</option><option value="resolved">Закрыта</option>
+                </select>
+              </label>
+              {statusBusy && <LoaderCircle size={16} className="spin" />}
+              {!projectId && <p className="form-hint">Сохранённый отчёт. Статус можно изменить в последней проверке.</p>}
+            </div>
+            {statusError && <ErrorBanner message={statusError} />}
+            <h4>Расчёт приоритета</h4>
+            <ul>{selected.priority_reasons.map((reason, index) => <li key={index}>{displayText(reason)}</li>)}</ul>
+            <h4>Версии с исправлением</h4>
+            <p className="mono">{selected.fixed_versions.join(", ") || "Не указаны источником"}</p>
+            <details>
+              <summary>Затронутые версии</summary>
+              <pre className="data-block">{valueText(selected.affected)}</pre>
+            </details>
+            <div className="detail-meta">
+              <span>Опубликовано: {formatDate(selected.published)}</span>
+              <span>Обновлено: {formatDate(selected.modified)}</span>
+              <span>Дата EPSS: {selected.epss_date || "Нет данных"}</span>
+              <span>Статус: {statusLabel(selected.status)}</span>
+            </div>
+            {selected.aliases.length > 0 && <p className="mono muted">{selected.aliases.join(" · ")}</p>}
+            <h4>Ссылки</h4>
+            <div className="reference-list">
+              {selected.references.map((reference, index) => (
+                <External key={index} url={typeof reference === "string" ? reference : reference.url} />
+              ))}
+            </div>
+            <p className="form-hint">Варианты обновления доступны на вкладке «Обновления». Перед применением проверьте совместимость.</p>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
 }
-
-
-
-

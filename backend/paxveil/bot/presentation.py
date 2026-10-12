@@ -20,19 +20,58 @@ MENU = {
     "⚙️ Настройки": "settings",
 }
 
+STATUS_LABELS = {
+    "queued": "В очереди",
+    "pending": "В очереди",
+    "running": "Проверяется",
+    "completed": "Завершено",
+    "succeeded": "Завершено",
+    "partial": "Неполные данные",
+    "insufficient_data": "Недостаточно данных",
+    "failed": "Ошибка проверки",
+    "retry": "Повторная попытка",
+    "resolved": "Рассчитано",
+    "conflict": "Конфликт зависимостей",
+    "unknown": "Нет данных",
+}
+
+COMPLETENESS_LABELS = {
+    "recorded_versions_checked": "Проверены указанные версии",
+    "complete": "Проверка завершена",
+    "partial": "Неполные данные",
+    "insufficient_data": "Недостаточно данных",
+    "unknown": "Нет данных",
+}
+
+SEVERITY_LABELS = {
+    "critical": "Критическая",
+    "high": "Высокая",
+    "medium": "Средняя",
+    "moderate": "Средняя",
+    "low": "Низкая",
+    "unknown": "Нет данных",
+}
+
+STRATEGY_LABELS = {
+    "Minimal Change": "Точечное обновление",
+    "Balanced": "В пределах major-версии",
+    "Maximum Coverage": "Полное обновление",
+}
+
 
 def text(value: Any, limit: int = 300) -> str:
     return escape(str(value)[:limit], quote=True)
 
 
+def display_label(value: Any, labels: dict[str, str], limit: int = 80) -> str:
+    raw = "unknown" if value is None else str(value)
+    return text(labels.get(raw, raw), limit)
+
+
 def keyboard(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(text=label[:64], callback_data=data)
-                for label, data in row
-            ]
-            for row in rows
+            [InlineKeyboardButton(text=label[:64], callback_data=data) for label, data in row] for row in rows
         ]
     )
 
@@ -40,12 +79,9 @@ def keyboard(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
 def home_keyboard() -> ReplyKeyboardMarkup:
     labels = list(MENU)
     return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=label) for label in labels[i : i + 2]]
-            for i in range(0, len(labels), 2)
-        ],
+        keyboard=[[KeyboardButton(text=label) for label in labels[i : i + 2]] for i in range(0, len(labels), 2)],
         resize_keyboard=True,
-        input_field_placeholder="Отправьте lock-файл или выберите действие",
+        input_field_placeholder="Отправьте файл зависимостей или выберите действие",
     )
 
 
@@ -55,10 +91,10 @@ def project_keyboard(project: dict[str, Any]) -> InlineKeyboardMarkup:
     return keyboard(
         [
             [("📄 Отчёт", f"report:{pid}"), ("🧪 FixLab", f"strategies:{pid}")],
-            [("🔄 Сканировать", f"scan:{pid}")],
+            [("🔄 Проверить снова", f"scan:{pid}")],
             [
                 (
-                    "🔕 Отключить Watch" if enabled else "🔔 Включить Watch",
+                    "🔕 Отключить мониторинг" if enabled else "🔔 Включить мониторинг",
                     f"watch:{pid}:{0 if enabled else 1}",
                 )
             ],
@@ -71,24 +107,20 @@ def project_keyboard(project: dict[str, Any]) -> InlineKeyboardMarkup:
 def report_summary(project: dict[str, Any]) -> str:
     latest = project.get("latest_scan") or {}
     report = latest.get("report") or {}
-    status = latest.get("status", "нет сканирования")
+    status = latest.get("status", "Ещё не проверялся")
     title = f"<b>{text(project.get('name', 'Проект'), 80)}</b>"
     if not report:
-        return f"{title}\nСканирование: <code>{text(status, 40)}</code>\nWatch: {'включён' if project.get('watch') else 'выключен'}"
+        return f"{title}\nПроверка: <code>{display_label(status, STATUS_LABELS, 40)}</code>\nМониторинг: {'включён' if project.get('watch') else 'выключен'}"
     stats = report.get("stats") or {}
     findings = report.get("findings") or []
-    priorities = [
-        f.get("priority", 0)
-        for f in findings
-        if isinstance(f.get("priority"), (float, int))
-    ]
+    priorities = [f.get("priority", 0) for f in findings if isinstance(f.get("priority"), (float, int))]
     lines = [
         title,
         f"Зависимостей: <b>{text(stats.get('dependencies', len(report.get('dependencies', []))))}</b>",
         f"Известных уязвимостей: <b>{text(stats.get('findings', len(findings)))}</b>",
         f"Наибольший приоритет: <b>{max(priorities, default=0)}/100</b>",
-        f"Полнота анализа: <code>{text(report.get('completeness', 'unknown'), 80)}</code>",
-        f"Watch: {'включён' if project.get('watch') else 'выключен'}",
+        f"Проверка: <code>{display_label(report.get('completeness'), COMPLETENESS_LABELS)}</code>",
+        f"Мониторинг: {'включён' if project.get('watch') else 'выключен'}",
     ]
     warnings = report.get("warnings") or []
     if warnings:
@@ -96,51 +128,40 @@ def report_summary(project: dict[str, Any]) -> str:
         if len(warnings) > 1:
             lines.append(f"Ещё предупреждений: {len(warnings) - 1}. См. полный отчёт.")
     if not findings:
-        lines.append(
-            "Это результат доступных источников; он не гарантирует отсутствие уязвимостей."
-        )
+        lines.append("Это результат доступных источников; он не гарантирует отсутствие уязвимостей.")
     else:
-        lines.append(
-            "Наличие уязвимой версии не доказывает эксплуатацию в вашем приложении."
-        )
+        lines.append("Наличие уязвимой версии не доказывает эксплуатацию в вашем приложении.")
     return "\n".join(lines)
 
 
 def finding_summary(finding: dict[str, Any]) -> str:
     lines = [
-        f"<b>{text(finding.get('id', 'Advisory'), 100)}</b> · {text(finding.get('severity', 'unknown'), 20)}",
+        f"<b>{text(finding.get('id', 'Уязвимость'), 100)}</b> · {display_label(finding.get('severity'), SEVERITY_LABELS, 40)}",
         f"<code>{text(finding.get('package'), 100)}=={text(finding.get('version'), 60)}</code>",
         f"Приоритет {text(finding.get('priority', 0))}/100 · CVSS {text(finding.get('cvss') if finding.get('cvss') is not None else 'нет данных')}",
     ]
     epss = finding.get("epss")
-    lines.append(
-        f"EPSS: {epss:.2%}" if isinstance(epss, (int, float)) else "EPSS: нет данных"
-    )
+    lines.append(f"EPSS: {epss:.2%}" if isinstance(epss, (int, float)) else "EPSS: нет данных")
     if finding.get("kev"):
         lines.append("CISA KEV: есть запись о подтверждённой эксплуатации.")
     lines.append(text(finding.get("summary", ""), 350))
     fixed = finding.get("fixed_versions") or []
-    lines.append(
-        "Исправленные версии: "
-        + (text(", ".join(map(str, fixed[:6])), 200) if fixed else "нет данных")
-    )
+    lines.append("Исправленные версии: " + (text(", ".join(map(str, fixed[:6])), 200) if fixed else "нет данных"))
     reasons = finding.get("priority_reasons") or []
     if reasons:
-        lines.append(
-            "Причины приоритета: " + text("; ".join(map(str, reasons[:3])), 250)
-        )
+        lines.append("Причины приоритета: " + text("; ".join(map(str, reasons[:3])), 250))
     return "\n".join(lines)
 
 
 def settings_summary(settings: dict[str, Any]) -> str:
     quiet = (
-        f"{text(settings.get('quiet_start'))}–{text(settings.get('quiet_end'))}"
+        f"{text(settings.get('quiet_start'))} до {text(settings.get('quiet_end'))}"
         if settings.get("quiet_start")
         else "выключены"
     )
     return "\n".join(
         [
-            "<b>Настройки PAXVEIL Watch</b>",
+            "<b>Настройки мониторинга</b>",
             f"Часовой пояс: <code>{text(settings.get('timezone', 'UTC'), 80)}</code>",
             f"Тихие часы: {quiet}",
             f"Минимальный приоритет: {text(settings.get('minimum_priority', 0))}/100",
@@ -151,26 +172,24 @@ def settings_summary(settings: dict[str, Any]) -> str:
             "/priority 60",
             "/digest on или /digest off",
             "/category new off (new, priority, fix, exploitation, status)",
-            "/link КОД — связать с веб-аккаунтом",
+            "/link КОД: связать с веб-аккаунтом",
         ]
     )
 
 
 def fix_summary(strategy: dict[str, Any], limitations: list[str]) -> str:
     lines = [
-        f"<b>FixLab · {text(strategy.get('name', 'Стратегия'), 80)}</b>",
+        f"<b>FixLab · {display_label(strategy.get('name', 'Вариант обновления'), STRATEGY_LABELS)}</b>",
         text(strategy.get("reason", ""), 400),
     ]
-    lines.append(f"Статус: <code>{text(strategy.get('status', 'unknown'), 60)}</code>")
+    lines.append(f"Статус: <code>{display_label(strategy.get('status'), STATUS_LABELS, 60)}</code>")
     updates = strategy.get("updates") or []
     for item in updates[:8]:
         if isinstance(item, dict):
             name = item.get("package", item.get("name", "?"))
             old = item.get("from", item.get("current", item.get("from_version", "?")))
             new = item.get("to", item.get("target", item.get("to_version", "?")))
-            lines.append(
-                f"• <code>{text(name, 90)}</code>: {text(old, 50)} → {text(new, 50)}"
-            )
+            lines.append(f"• <code>{text(name, 90)}</code>: {text(old, 50)} → {text(new, 50)}")
     if len(updates) > 8:
         lines.append(f"Ещё обновлений: {len(updates) - 8}; см. веб-отчёт.")
     for label, key in [("До", "before"), ("После", "after")]:

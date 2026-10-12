@@ -677,7 +677,7 @@ def build_dispatcher(service: BotService) -> Dispatcher:
         code = (command.args or "").strip()
         if not re.fullmatch(r"[A-Za-z0-9_-]{6,128}", code):
             await message.answer(
-                "Войдите в PAXVEIL в браузере, откройте Настройки → Связать Telegram и отправьте <code>/link КОД</code>. Код одноразовый и ограничен по времени."
+                "Откройте Настройки → Telegram в PAXVEIL, получите код и отправьте <code>/link КОД</code>. Код одноразовый и действует 10 минут."
             )
             return
         await service.api.link(message.from_user.id, code)

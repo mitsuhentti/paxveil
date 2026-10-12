@@ -464,7 +464,7 @@ async def test_forged_object_id_is_owner_checked_by_api(harness):
 async def test_watch_callback_uses_callback_actor_and_persisted_api_setting(harness):
     await harness.feed(callback=f"watch:{PROJECT}:1")
     assert harness.fixture.watch is True
-    assert any("Watch: включён" in s for s in harness.telegram.texts)
+    assert any("Мониторинг: включён" in s for s in harness.telegram.texts)
     await harness.feed(callback=f"watch:{PROJECT}:0")
     assert harness.fixture.watch is False
 
@@ -488,7 +488,7 @@ async def test_fixlab_selects_project_then_strategy_and_waits_for_job(harness):
     await harness.feed(callback=f"strategies:{PROJECT}")
     harness.fixture.job_states = ["pending", "running", "succeeded"]
     await harness.feed(callback=f"fix:{PROJECT}:1")
-    assert any("Balanced" in s for s in harness.telegram.texts)
+    assert any("В пределах major-версии" in s for s in harness.telegram.texts)
     assert any(
         "fixture-package" in s and "1.0 → 1.1" in s for s in harness.telegram.texts
     )

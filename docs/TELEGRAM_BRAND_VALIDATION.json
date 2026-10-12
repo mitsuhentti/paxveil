@@ -1,0 +1,14 @@
+{
+  "captured_at_utc": "2026-10-12T18:58:29.765531+00:00",
+  "username": "PAXVEIL_Bot",
+  "photo_method_succeeded": true,
+  "profile_photo_present": true,
+  "name_method_succeeded": true,
+  "name_verified": true,
+  "short_description_method_succeeded": true,
+  "short_description_verified": true,
+  "description_method_succeeded": true,
+  "description_verified": true,
+  "asset": "frontend/public/telegram-icon.jpg",
+  "official_method": "https://core.telegram.org/bots/api#setmyprofilephoto"
+}

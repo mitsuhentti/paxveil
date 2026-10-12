@@ -1,0 +1,76 @@
+{
+  "captured_at_utc": "2026-10-12T19:04:42Z",
+  "browser": "Supported in-app browser",
+  "frontend": "Production Next.js build",
+  "frontend_build": "passed; TypeScript and page generation passed",
+  "affected_bot_tests": {
+    "passed": 24,
+    "warning_count": 1,
+    "seconds": 5.17
+  },
+  "browser_error_log": [],
+  "saved_report": {
+    "dependencies": 1,
+    "findings": 3,
+    "status": "partial",
+    "available_after_final_restart": true
+  },
+  "graph_zoom": {
+    "before_width": 700,
+    "after_width_attribute": 840,
+    "after_rendered_width": 840
+  },
+  "responsive_checks": [
+    {
+      "page": "report",
+      "viewport_width": 390,
+      "viewport_height": 844,
+      "document_width": 375,
+      "horizontal_page_overflow": false
+    },
+    {
+      "page": "dashboard",
+      "viewport_width": 390,
+      "viewport_height": 844,
+      "document_width": 390,
+      "horizontal_page_overflow": false
+    },
+    {
+      "page": "settings",
+      "viewport_width": 390,
+      "viewport_height": 844,
+      "document_width": 375,
+      "horizontal_page_overflow": false
+    },
+    {
+      "page": "landing",
+      "viewport_width": 390,
+      "viewport_height": 844,
+      "document_width": 375,
+      "horizontal_page_overflow": false
+    }
+  ],
+  "checks": [
+    "Login and existing project navigation",
+    "Finding search, modal and status persistence",
+    "Read-only historical report",
+    "Graph selection and rendered zoom",
+    "Keyboard ArrowRight, Home, End",
+    "FixLab calculation and distinct unknown/zero results",
+    "CVE-2024-35195 matched saved Requests 2.31.0",
+    "Light and dark theme",
+    "Mobile menu and upload validation",
+    "Final normal shutdown and start"
+  ],
+  "live_fixlab_check_date": "2026-10-11",
+  "live_cve_check_date": "2026-10-12",
+  "standalone_playwright_runner_executed": false,
+  "screenshot_encoding": "Original JPEG returned by browser; correct .jpg extensions; no screenshot edits",
+  "full_backend_baseline": {
+    "date": "2026-10-11",
+    "passed": 122,
+    "skipped": 2,
+    "rerun_for_design_update": false
+  },
+  "bot_profile_evidence": "TELEGRAM_BRAND_VALIDATION.json"
+}

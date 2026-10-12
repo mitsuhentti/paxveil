@@ -1,5 +1,9 @@
 # Automated verification
 
+## Design update, 12 October 2026
+
+The affected Telegram handler/API tests were rerun after copy changes: **24 passed, 1 existing framework warning in 5.17 seconds**. Ruff and formatting of bot presentation passed. Only two assertions were adapted to the new labels; API ownership and callback checks retain their earlier behavior. The frontend production build passed, including TypeScript and page generation. Browser checks through the in-app browser are recorded in [DESIGN_REVIEW.md](DESIGN_REVIEW.md). The full backend results below are the 11 October baseline; this update reran affected coverage.
+
 Executed on **2026-10-11** against the delivered working tree on Windows with the project's Python 3.11 environment. Results are bounded evidence of the tested behavior, not a production certification.
 
 ## Final backend checks
