@@ -36,9 +36,12 @@ export function ProjectView({
   const [scans, setScans] = useState<Scan[]>([]);
   const [historyBusy, setHistoryBusy] = useState(false);
   const [historical, setHistorical] = useState<Scan | null>(null);
+  const [openingScan, setOpeningScan] = useState(false);
 
   useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get("tab");
+    const search = new URLSearchParams(window.location.search);
+    const requested = search.get("tab");
+    const requestedScan = search.get("scan");
     setTab(tabs.some(item => item.id === requested) ? requested! : "report");
     setHistorical(null);
     setProject(null);
@@ -46,7 +49,19 @@ export function ProjectView({
     let alive = true;
 
     api<Project>(`/projects/${id}`)
-      .then(data => { if (alive) setProject(data); })
+      .then(async data => {
+        if (!alive) return;
+        setProject(data);
+        if (!requestedScan) return;
+        setOpeningScan(true);
+        try {
+          const history = await api<Scan[]>(`/projects/${id}/scans`);
+          if (!alive) return;
+          const report = history.find(item => item.id === requestedScan);
+          if (report?.report) setHistorical(report);
+          else setError("Сохранённый отчёт не найден. Открыта последняя проверка проекта.");
+        } finally { if (alive) setOpeningScan(false); }
+      })
       .catch(error => { if (alive) setError(error.message); });
 
     return () => { alive = false; };
@@ -87,6 +102,9 @@ export function ProjectView({
       await api(`/projects/${id}/scan`, { method: "POST" });
       setProject(await api<Project>(`/projects/${id}`));
       setHistorical(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("scan");
+      window.history.replaceState(null, "", url);
       selectTab("report");
       changed();
       notify("Проверка поставлена в очередь");
@@ -131,13 +149,20 @@ export function ProjectView({
     }
   }
 
-  async function openScan(scan: Scan) {
-    try {
-      setHistorical(await api<Scan>(`/scans/${scan.id}`));
-      selectTab("report");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Не удалось открыть отчёт");
-    }
+  function openScan(scan: Scan) {
+    setHistorical(scan);
+    setError("");
+    const url = new URL(window.location.href);
+    url.searchParams.set("scan", scan.id);
+    window.history.replaceState(null, "", url);
+    selectTab("report");
+  }
+
+  function latestReport() {
+    setHistorical(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("scan");
+    window.history.replaceState(null, "", url);
   }
 
   function selectTab(value: string) {
@@ -180,7 +205,7 @@ export function ProjectView({
           </div>
           <h1>{project.name}</h1>
           <p>
-            {project.latest_scan ? <>Проверено {formatDate(project.latest_scan.created_at)}</> : "Проверок пока нет"}
+            {project.latest_scan ? <>{running ? "Запущено" : "Проверка от"} {formatDate(project.latest_scan.created_at)}</> : "Проверок пока нет"}
             {project.latest_scan && (
               <span className={`status-badge ${project.latest_scan.status}`}>
                 {statusLabel(project.latest_scan.status)}
@@ -201,7 +226,7 @@ export function ProjectView({
             {running ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
             {running ? "Проверка идёт" : "Проверить снова"}
           </button>
-          <button className="icon-button danger" aria-label="Удалить проект" onClick={() => setRemove(true)}>
+          <button className="icon-button danger" aria-label="Удалить проект" disabled={busy} onClick={() => setRemove(true)}>
             <Trash2 size={17} />
           </button>
         </div>
@@ -225,7 +250,7 @@ export function ProjectView({
         ))}
       </div>
       <div id="project-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
-        {tab === "history" ? (
+        {openingScan ? <Loading text="Открывается сохранённый отчёт" /> : tab === "history" ? (
           historyBusy ? <Loading /> : scans.length ? (
             <section className="history-section report-section">
               <div className="report-title"><h2>Предыдущие проверки</h2><span className="count">{scans.length}</span></div>
@@ -237,7 +262,7 @@ export function ProjectView({
                   <tbody>
                     {scans.map(item => (
                       <tr key={item.id}>
-                        <td className="mono" title={item.id}>#{item.id.slice(0, 8)}</td>
+                        <td>{item.id === project.latest_scan?.id ? "Последняя" : "Сохранённая"}</td>
                         <td>{formatDate(item.created_at)}</td>
                         <td><span className={`status-badge ${item.status}`}>{statusLabel(item.status)}</span></td>
                         <td>{item.report?.stats.dependencies ?? "н/д"}</td>
@@ -257,13 +282,12 @@ export function ProjectView({
             </section>
           ) : <Empty title="История пуста" detail="Здесь появятся отчёты после первой проверки." />
         ) : !scan ? (
-          <Empty title="Проект ещё не проверен" detail="Запустите проверку, чтобы получить отчёт по зависимостям." />
+          <Empty title="Проект ещё не проверен" detail="Запустите проверку, чтобы получить отчёт по зависимостям."><button className="button primary" disabled={busy} onClick={rescan}><RefreshCw size={17} />Проверить проект</button></Empty>
         ) : ["queued", "running"].includes(scan.status) ? (
           <div className="scan-progress" role="status">
             <span className="scan-loader"><Radar size={32} /></span>
             <h2>{scan.status === "queued" ? "Проверка в очереди" : "Проверка зависимостей"}</h2>
             <p>Загрузка данных OSV и метаданных пакетов. Отчёт появится автоматически.</p>
-            <span className="scan-meta mono">#{scan.id.slice(0, 8)}</span>
           </div>
         ) : scan.status === "failed" ? (
           <ErrorBanner message={scan.error || "Проверка завершилась с ошибкой."} retry={rescan} />
@@ -271,14 +295,15 @@ export function ProjectView({
           <>
             {historical && (
               <div className="historical-banner">
-                <span>Отчёт от {formatDate(historical.created_at)} <span className="mono">#{historical.id.slice(0, 8)}</span></span>
-                <button onClick={() => setHistorical(null)}>Последний отчёт</button>
+                <span>Отчёт от {formatDate(historical.created_at)}</span>
+                <button onClick={latestReport}>Последний отчёт</button>
               </div>
             )}
             {tab === "graph" ? <DependencyGraph report={scan.report} /> : tab === "fixlab" ? <FixLab key={scan.id} scan={scan} /> : (
               <ReportView
                 key={scan.id}
                 report={scan.report}
+                updates={() => selectTab("fixlab")}
                 projectId={historical ? undefined : project.id}
                 changed={() => {
                   api<Project>(`/projects/${id}`).then(setProject).catch(error => setError(error.message));
@@ -287,16 +312,16 @@ export function ProjectView({
               />
             )}
           </>
-        ) : <Empty title="Отчёт недоступен" detail="Обновите страницу или запустите проверку снова." />}
+        ) : <Empty title="Отчёт недоступен" detail="Запустите проверку снова, чтобы получить свежий отчёт."><button className="button primary" disabled={busy || running} onClick={rescan}><RefreshCw size={17} />Проверить снова</button></Empty>}
       </div>
       <Modal
         open={remove}
-        onOpenChange={setRemove}
+        onOpenChange={value => { if (!busy) setRemove(value); }}
         title="Удалить проект?"
         description={`Проект «${project.name}», все отчёты и настройки мониторинга будут удалены.`}
       >
         <div className="modal-actions">
-          <button className="button secondary" onClick={() => setRemove(false)}>Отмена</button>
+          <button className="button secondary" disabled={busy} onClick={() => setRemove(false)}>Отмена</button>
           <button className="button destructive" disabled={busy} onClick={deleteProject}>
             {busy && <LoaderCircle className="spin" size={16} />} Удалить проект
           </button>

@@ -1,6 +1,6 @@
 """Fence notification delivery leases."""
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "ae6709"
 down_revision = "e7281f"

@@ -1,6 +1,8 @@
 # PAXVEIL deployment and operations
 
-Native Windows startup reuses existing Python, Node.js and PostgreSQL. The prepared runtime passed re-preparation twice, startup, ordinary shutdown outside Windows isolation and restart with recorded evidence. Full fresh bootstrap and Docker execution remain unverified. No public server or paid resource has been created.
+The selected zero-budget deployment runs the Telegram bot on the owner's Windows computer. Telegram users connect through Telegram; the computer needs outbound HTTPS and does not need a public IP address, domain or open router ports. Availability depends on the computer staying awake, its network connection and the application processes. No hosting account or paid resource has been created.
+
+Native startup, ordinary shutdown and restart have recorded evidence. A PostgreSQL backup restored into a separate database with all table fingerprints matching, and real concurrent queue claims passed. Full fresh bootstrap, Docker execution and remote GitHub Actions remain unverified.
 
 ## Native Windows prerequisites
 
@@ -59,6 +61,24 @@ Use that directory consistently. To re-prepare this existing environment after s
 
 The existing cluster and token are retained. Then start with the same runtime directory. A new checkout uses the normal commands without `-RuntimeDirectory`.
 
+## Automatic local operation
+
+The user-level launcher is `scripts/autostart.ps1`. Enable it for the existing workspace:
+
+```powershell
+.\scripts\autostart.ps1 -Mode Enable -RuntimeDirectory '..\..\work\runtime' -BotOnly
+.\scripts\autostart.ps1 -Mode Status -RuntimeDirectory '..\..\work\runtime'
+```
+
+It uses the current Windows user's login startup entry and `scripts/supervise-native.ps1` to supervise the project processes, with an optional bot-only launch. It requires no administrator-installed service. The supervisor invokes the daily backup helper and keeps logs in runtime. A login startup entry cannot run while the computer is powered off; after reboot the owner must sign in. Sleep or loss of connectivity interrupts polling and delivery.
+
+```powershell
+.\scripts\autostart.ps1 -Mode Disable -RuntimeDirectory '..\..\work\runtime'
+.\scripts\stop.ps1 -RuntimeDirectory '..\..\work\runtime'
+```
+
+Normal stop sets the disabled marker before stopping the verified supervisor and its owned services. A retained login entry then remains inactive until Enable is used. The supervisor verifies recorded process identities and does not take ownership of unrelated processes. Its execution evidence is recorded separately when the final launch is verified.
+
 ## Troubleshooting native processes
 
 The stop script verifies each recorded process start time before terminating its project-owned tree. The timestamp comparison supports PowerShell's automatic JSON date parsing. Normal PostgreSQL shutdown uses `pg_ctl`; failures retain the manifest for inspection and retry.
@@ -69,7 +89,7 @@ Ordinary `stop.ps1`, without `-ForceDatabase`, succeeded in the final run outsid
 .\scripts\stop.ps1 -RuntimeDirectory '..\..\work\runtime' -ForceDatabase
 ```
 
-Use the same runtime directory as startup; omit it only for repository-local runtime. The flag attempts normal PostgreSQL stop first, then force-terminates only its verified process tree if control signaling fails. The next start requires WAL recovery. Both the earlier crash-recovery check and final restart retained the QA project's state hash, one saved scan, three finding states and subscription row. These bounded observations do not establish long-term production reliability or backup recoverability. See [runtime evidence](RUNTIME_VALIDATION.json) and [operational notes](OPERATIONS_VALIDATION.md).
+Use the same runtime directory as startup; omit it only for repository-local runtime. The flag attempts normal PostgreSQL stop first, then force-terminates only its verified process tree if control signaling fails. The next start requires WAL recovery. Both the earlier crash-recovery check and final restart retained the QA project's state hash, one saved scan, three finding states and subscription row. See [runtime evidence](RUNTIME_VALIDATION.json) and [operational notes](OPERATIONS_VALIDATION.md). The separate backup restoration described below verifies recovery from a dump without changing the working cluster.
 
 If a startup stage fails, inspect the selected runtime logs and use the matching stop script; the manifest remains available. If a port is occupied, identify its owner before doing anything. Manually started services are not automatically owned by a manifest; never stop unrelated processes by name. Keep one polling process per Telegram token.
 
@@ -81,37 +101,76 @@ After configuration use `start.ps1 -Telegram`. The owner's [@PAXVEIL_Bot](https:
 
 API, bot and worker need network access to their configured services. Polling and Watch delivery require outbound HTTPS to Telegram. Bot startup removes an existing webhook without dropping pending updates; do not run a second instance or a deployment webhook simultaneously for the token. Watch stops scheduling/delivering when worker is stopped. A localhost report URL must be opened on this computer; a phone requires a separately deployed reachable HTTPS URL.
 
-## Docker Compose: prepared topology
+## Docker Compose: portable bot deployment
 
 This path requires Docker Engine/Desktop and Compose v2. Docker was unavailable, so the supplied Dockerfiles and Compose topology have not run on this machine. In a fresh Linux checkout, create `.env` from `.env.example`, replace all secret placeholders with independent random values and configure the Telegram token when using the bot. Do not leave `CHANGE_ME` or `GENERATE_RANDOM_64_HEX_CHARACTERS`.
 
 Compose overrides `DATABASE_URL` with the private `db:5432` address and persists PostgreSQL in a named volume. Backend/bot use `PAXVEIL_API_URL=http://api:8000`. `PAXVEIL_WEB_URL` is the human-facing address, locally `http://localhost:3000`; an internal container hostname must not be shown as the report URL.
 
-From the repository root in a Docker environment:
+The bot-only stack consists of PostgreSQL, the migration step, API, worker and one polling bot. It publishes no host ports. From the repository root in a Docker environment:
 
 ```text
-docker compose config --quiet
-docker compose up --build -d
-docker compose --profile telegram up -d bot
+docker compose --profile telegram config --quiet
+docker compose --profile telegram up --build --wait -d api worker bot
 docker compose ps
-docker compose logs --tail 100 api worker bot web
+docker compose logs --tail 100 api worker bot
 ```
 
-The quiet config check avoids printing resolved secrets. A one-shot migration service waits for healthy PostgreSQL; API waits for successful migrations; worker/bot wait for API health. Application containers are nonroot with dropped capabilities. API and web host ports bind only to loopback; PostgreSQL exposes no host port.
+The quiet config check avoids printing resolved secrets. PostgreSQL health gates migrations; successful migrations gate API; API/database health gates worker and bot. Application containers use a nonroot user and dropped capabilities. Backend root filesystems are read-only; the cache volume and bounded temporary directory remain writable. Logs rotate at 10 MiB with three files per service. An init process reaps children, process limits are 128, and normal stop gives application services 30 seconds and PostgreSQL 60 seconds. These settings follow the [Compose service reference](https://docs.docker.com/reference/compose-file/services/). Worker and bot startup is a process check; verify an actual completed job and Telegram response afterward.
+
+The optional `web` profile builds and starts the browser UI on host loopback only:
 
 ```text
-docker compose down
+docker compose --profile web --profile telegram up --build -d
 ```
 
-Named volumes remain. `down -v` deletes database/cache data and is not part of ordinary shutdown. At first execution, verify registration, upload, job completion, FixLab, Fire Drill, Watch, Telegram and persistence after `down`/`up`. Native acceptance does not substitute for these container checks.
+For local OpenAPI inspection, merge `compose.local.yaml`; it adds only `127.0.0.1:8000`. Profiles control optional services as described in the [Docker documentation](https://docs.docker.com/compose/how-tos/profiles/). The native runtime is already available and does not require installing Docker.
+
+```text
+docker compose --profile telegram --profile web down
+```
+
+Named volumes remain. `down -v` deletes database/cache data and is not part of ordinary shutdown. Include every enabled profile when stopping. At first execution, verify upload, completed analysis, FixLab, Fire Drill, Watch, Telegram and persistence after restart. Native acceptance does not substitute for these container checks. The supplied CI prepares a disposable container check; no remote CI run has yet been observed.
 
 ## Updates and backups
 
-Before upgrading, produce a private PostgreSQL `pg_dump` outside the repository and retain `.env` separately with owner-only access. A database backup contains uploaded manifests, project records and Telegram identifiers. Test restoring the backup to a separate cluster before changing the working instance. Copying native `pgdata` is only appropriate after a verified clean shutdown and remains PostgreSQL-version-specific.
+Before upgrading, create a private PostgreSQL backup outside the repository and retain `.env` separately with owner-only access. A database backup contains uploaded manifests, project records, session hashes and Telegram identifiers. It must not enter Git, release archives or portfolio attachments. Copying native `pgdata` requires a verified clean shutdown and remains PostgreSQL-version-specific.
+
+`scripts/database-ops.py` uses the existing project Python and matching PostgreSQL client tools. In a fresh checkout with its prepared venv:
+
+```powershell
+.\runtime\venv\Scripts\python.exe scripts/database-ops.py backup --env .env --pg-bin 'C:\Program Files\PostgreSQL\18\bin' --directory '..\paxveil-private-backups'
+```
+
+Use the external venv path when the launcher uses `-RuntimeDirectory`. The development workspace uses `..\..\work\runtime\venv\Scripts\python.exe` and stores backups in `..\..\work\runtime\backups`. The backup destination is deliberately rejected if it is inside the checkout.
+
+The custom dump and private JSON manifest share a basename. Row fingerprints are taken in the exported snapshot used by `pg_dump`; ongoing writes do not produce inconsistent comparison evidence. Credentials travel through process environment variables, never tool arguments or public evidence. See [PostgreSQL pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html).
+
+After successful creation, the helper rotates recognized, checksum-valid backup pairs older than seven days. `--retain-days` changes that policy. Failed creation retains earlier backups. Consequently, a stalled backup service can keep older copies until a later successful backup; check the latest success timestamp. Linux creates owner-only files/directories. On Windows, use a directory with an owner-only inherited ACL; the helper does not silently change Windows account permissions. A local backup protects against accidental data loss, while a private copy on another device is needed for disk failure.
+
+Verify a selected dump with its matching manifest:
+
+```powershell
+.\runtime\venv\Scripts\python.exe scripts/database-ops.py verify-backup --env .env --pg-bin 'C:\Program Files\PostgreSQL\18\bin' --archive '..\paxveil-private-backups\BACKUP_NAME.dump' --evidence docs/BACKUP_VALIDATION.json
+```
+
+The verifier checks the archive checksum, creates a uniquely named database marked as disposable, restores with `--exit-on-error`, compares every public-table row fingerprint, and removes only the database with the matching marker. It has no option to overwrite the working database. The database role needs permission to create a database. [PostgreSQL pg_restore](https://www.postgresql.org/docs/current/app-pgrestore.html) documents the restore tool.
+
+The actual **12 October 2026** run restored a 74,595-byte snapshot: **19 tables and 161 rows matched**, and the disposable database was removed. This establishes one complete logical dump/restore on PostgreSQL 18.6; it does not establish off-device disaster recovery. [BACKUP_VALIDATION.json](BACKUP_VALIDATION.json) contains sanitized evidence.
 
 Stop the application, update to the selected source revision and run `init.ps1` with the same `-RuntimeDirectory` used for startup, if external. This installs from dependency locks, rebuilds frontend and retains the cluster/configured secrets. The launcher applies forward migrations. Check health, saved projects/history/subscriptions and `alembic check` afterward. Application rollback must account for the migrated schema; do not erase data to resolve a compatibility problem.
 
-For Compose, back up and stop before rebuilding/updating; then enable the Telegram profile as needed. Do not change PostgreSQL major versions by replacing an image tag without a database migration plan. Backup/restore execution remains a future operational verification.
+For Compose, back up and stop before rebuilding/updating; then enable the Telegram profile as needed. Do not change PostgreSQL major versions by replacing an image tag without a database migration plan. The helper's `--postgres-container CONTAINER_ID` uses tools from an existing same-instance PostgreSQL container; Python still needs private database access. It is used by the prepared CI job and has not run locally because Docker is unavailable.
+
+## PostgreSQL concurrency verification
+
+```powershell
+.\runtime\venv\Scripts\python.exe scripts/database-ops.py verify-concurrency --env .env --evidence docs/POSTGRES_CONCURRENCY_VALIDATION.json
+```
+
+This creates and migrates a separate marked database, uses eight threads with distinct database sessions, and removes it after verification. The actual 12 October run made 24 simultaneous enqueue requests that returned one scan job; 40 claim attempts claimed 24 pending jobs exactly once. Expiring a lease produced a new claim token, and executing the stale claim could not overwrite the successful successor. Analysis used a controlled in-memory report and made zero source queries. This verifies PostgreSQL locking and claim fencing, rather than scan throughput or external API capacity. [POSTGRES_CONCURRENCY_VALIDATION.json](POSTGRES_CONCURRENCY_VALIDATION.json) records the counts.
+
+CI now prepares the same queue and dump/restore checks, uploads sanitized evidence, verifies migrations, checks backend code and builds the frontend. A separate job builds private API/worker containers and the optional web image. CI databases and volumes are disposable and contain only test data. These jobs need an uploaded GitHub repository before they can provide remote run evidence.
 
 ## Logs, jobs and ETL
 
@@ -131,12 +190,12 @@ The measured runtime sample contains 20 sequential local API-health requests: me
 
 An idle memory snapshot summed 646.66 MiB of working sets and 457.84 MiB of private commit for readable project process trees. Working-set sums double-count shared pages, and several children were unreadable, so these are partial observed sums rather than total or peak application memory. [MEMORY_SNAPSHOT.json](MEMORY_SNAPSHOT.json) provides the method and component counts.
 
-## Continuous hosting requirements and cost reference
+## Free operation and later hosting
 
-A starting planning hypothesis for a small deployment is **2 vCPU, 4 GiB RAM and 40–80 GiB SSD**, with one worker and storage headroom. This is not a tested capacity promise. Next build may need additional headroom; size the service from observed memory, job duration and actual project counts.
+The selected setup adds no Telegram or hosting subscription. It uses the owner's computer and internet connection. The bot remains reachable through its public Telegram username while that machine runs. Do not change router forwarding or expose PostgreSQL/API to make the bot public. Polling is outbound; use one polling process for the token.
 
-DigitalOcean's official pricing page checked on **11 October 2026** lists its Basic 2-vCPU/4-GiB/80-GiB plan at **$24 per month**. This is a VM price reference; domain, backups, tax and additional services are separate. Verify the offer before purchasing: [Droplet pricing](https://www.digitalocean.com/pricing/droplets). No paid resources were created.
+An independent host is useful when the computer must be turned off. Free provider offers have account, capacity, sleep and persistence conditions; choose and verify those conditions before migration. A free web service that sleeps or expires its database is unsuitable for uninterrupted polling and durable Watch history. The prepared bot-only container package can move to a suitable Linux host later. Linux ARM execution has not been tested; the FixLab resolver explicitly models its documented x86_64 target environments.
 
-Public operation requires verified HTTPS termination, an exact `ALLOWED_ORIGINS`, `SECURE_COOKIES=true`, a public HTTPS `PAXVEIL_WEB_URL`, private database/secrets and deliberate registration/storage quotas. Multi-instance operation needs shared rate limits and concurrent-ingestion validation. Add tested backup/restore, log rotation, source retention and worker/outbox monitoring. One bot polling instance can operate on a server; protected webhook delivery would require a separate implementation and acceptance.
+Public browser access is a separate deployment: add verified HTTPS termination, an exact `ALLOWED_ORIGINS`, `SECURE_COOKIES=true` and a reachable HTTPS `PAXVEIL_WEB_URL`. No public browser deployment has been created. Telegram operation does not depend on a public browser URL.
 
-Before publication, the owner chooses source licensing, retention/deletion rules for uploaded manifests and identifiers, and service terms. Source lookups send package names/versions to public source APIs; Telegram receives documents/messages sent through its service. Formal name/domain/trademark checks remain before public launch. Public deployment, external accounts and paid resources require the owner's decision.
+Source lookups send package names/versions to the source APIs; Telegram receives documents/messages through its service. The public bot's privacy and deletion controls explain stored data and private backup retention. Review usage, failures, free disk space and the latest backup success as the number of users grows. Current endpoint measurements do not establish a supported number of concurrent users.

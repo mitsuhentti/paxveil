@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FlaskConical, ArrowRight, LoaderCircle, RefreshCw, Info } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type { FixResult, Job, Scan } from "@/lib/types";
 import { ErrorBanner, valueText, statusLabel, displayText } from "./ui";
 
@@ -18,6 +18,14 @@ const strategies: Record<string, { title: string; detail: string }> = {
   maximum,
 };
 const finishedStatuses = ["succeeded", "completed", "partial"];
+const activeStatuses = ["queued", "pending", "retry", "running"];
+
+function rememberJob(scanId: string, jobId: string | null) {
+  try {
+    if (jobId) sessionStorage.setItem(`paxveil-fixlab:${scanId}`, jobId);
+    else sessionStorage.removeItem(`paxveil-fixlab:${scanId}`);
+  } catch { /* The calculation still works when browser storage is unavailable. */ }
+}
 
 function GraphChanges({ value }: { value: unknown }) {
   if (!value || typeof value !== "object") return <p className="muted">Нет данных</p>;
@@ -72,16 +80,40 @@ export function FixLab({ scan }: { scan: Scan }) {
     setJob(null);
     setError("");
     setBusy(false);
+    let alive = true;
+    let previous: string | null = null;
+    try { previous = sessionStorage.getItem(`paxveil-fixlab:${scan.id}`); } catch { return; }
+    if (!previous) return;
+    setBusy(true);
+    api<Job>(`/jobs/${previous}`).then(data => {
+      if (!alive) return;
+      setJob(data);
+      if (finishedStatuses.includes(data.status)) setResult(data.result as FixResult);
+      if (data.status === "failed") setError(data.error || "Расчёт завершился с ошибкой");
+      setBusy(activeStatuses.includes(data.status));
+    }).catch(error => {
+      if (!alive) return;
+      if (error instanceof ApiError && [401, 404].includes(error.status)) {
+        rememberJob(scan.id, null);
+        setBusy(false);
+      } else {
+        setJob({ id: previous!, status: "pending", kind: "fixlab", result: null, error: null, attempts: 0 });
+        setError("Не удалось восстановить статус расчёта. Повторяем запрос автоматически.");
+      }
+    });
+    return () => { alive = false; };
   }, [scan.id]);
 
   useEffect(() => {
-    if (!job || !["queued", "pending", "retry", "running"].includes(job.status)) return;
+    if (!job || !activeStatuses.includes(job.status)) return;
     let cancelled = false;
-    const timer = setInterval(async () => {
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
       try {
-        const data = await api<Job>(`/jobs/${job.id}`);
+        const data = await api<Job>(`/jobs/${job!.id}`);
         if (cancelled) return;
         setJob(data);
+        setError("");
         if (finishedStatuses.includes(data.status)) {
           setResult(data.result as FixResult);
           setBusy(false);
@@ -90,15 +122,24 @@ export function FixLab({ scan }: { scan: Scan }) {
           setError(data.error || "Расчёт завершился с ошибкой");
           setBusy(false);
         }
+        if (activeStatuses.includes(data.status)) timer = setTimeout(poll, 2500);
       } catch (error) {
         if (!cancelled) {
-          setError(error instanceof Error ? error.message : "Не удалось получить результат");
-          setBusy(false);
+          if (error instanceof ApiError && [401, 404].includes(error.status)) {
+            rememberJob(scan.id, null);
+            setJob(null);
+            setBusy(false);
+            setError("Сохранённый расчёт больше недоступен. Обновите страницу или запустите новый.");
+            return;
+          }
+          setError("Связь прервалась. Расчёт продолжится на сервере, а страница повторит запрос автоматически.");
+          timer = setTimeout(poll, 5000);
         }
       }
-    }, 2000);
-    return () => { cancelled = true; clearInterval(timer); };
-  }, [job]);
+    }
+    timer = setTimeout(poll, 2000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [job?.id, job?.status]);
 
   async function run() {
     setBusy(true);
@@ -106,15 +147,8 @@ export function FixLab({ scan }: { scan: Scan }) {
     setResult(null);
     try {
       const data = await api<{ id: string; status: string }>(`/scans/${scan.id}/fixlab`, { method: "POST" });
-      const next = await api<Job>(`/jobs/${data.id}`);
-      setJob(next);
-      if (finishedStatuses.includes(next.status)) {
-        setResult(next.result as FixResult);
-        setBusy(false);
-      } else if (next.status === "failed") {
-        setError(next.error || "Расчёт завершился с ошибкой");
-        setBusy(false);
-      }
+      rememberJob(scan.id, data.id);
+      setJob({ ...data, kind: "fixlab", result: null, error: null, attempts: 0 });
     } catch (error) {
       setError(error instanceof Error ? error.message : "Не удалось запустить расчёт");
       setBusy(false);
@@ -133,7 +167,7 @@ export function FixLab({ scan }: { scan: Scan }) {
           {busy ? "Расчёт идёт" : result ? "Пересчитать" : "Рассчитать варианты"}
         </button>
       </div>
-      {error && <ErrorBanner message={error} retry={run} />}
+      {error && <ErrorBanner message={error} retry={busy ? undefined : run} />}
       <p className="analysis-note">
         <Info size={16} /> Код и тесты приложения не запускаются. Совместимость обновлений нужно проверить перед применением.
       </p>
@@ -141,8 +175,8 @@ export function FixLab({ scan }: { scan: Scan }) {
         <div role="status" className="job-progress">
           <LoaderCircle size={20} className="spin" />
           <div>
-            <strong>{job ? statusLabel(job.status) : "Создание задания"}</strong>
-            <p>PyPI, разрешение зависимостей и повторная проверка OSV. Это может занять несколько минут.</p>
+            <strong>{job ? statusLabel(job.status) : "Подготовка расчёта"}</strong>
+            <p>PyPI, разрешение зависимостей и повторная проверка OSV. Это может занять несколько минут. Можно перейти в другой раздел и вернуться к расчёту.</p>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle, Send } from "lucide-react";
 import { Brand } from "./brand";
 import { api, json } from "@/lib/api";
 import type { User } from "@/lib/types";
@@ -12,6 +12,7 @@ export function AuthForm() {
   const [register, setRegister] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setRegister(new URLSearchParams(window.location.search).has("register"));
@@ -47,7 +48,7 @@ export function AuthForm() {
           <label>
             Имя пользователя
             <input
-              name="username" required minLength={3} maxLength={64}
+              name="username" required minLength={3} maxLength={64} disabled={busy}
               pattern="[A-Za-z0-9_.-]+" autoComplete="username"
               autoCapitalize="none" spellCheck={false}
               aria-describedby={register ? "username-hint" : undefined}
@@ -56,11 +57,16 @@ export function AuthForm() {
           {register && <p id="username-hint" className="form-hint username-hint">От 3 символов. Латинские буквы, цифры, точка, дефис и подчёркивание.</p>}
           <label>
             Пароль
-            <input
-              name="password" type="password" required minLength={12} maxLength={128}
-              autoComplete={register ? "new-password" : "current-password"}
-              aria-describedby={register ? "password-hint" : undefined}
-            />
+            <span className="password-field">
+              <input
+                id="account-password" name="password" type={showPassword ? "text" : "password"} required minLength={12} maxLength={128} disabled={busy}
+                autoComplete={register ? "new-password" : "current-password"}
+                aria-describedby={register ? "password-hint" : undefined}
+              />
+              <button type="button" className="icon-button" aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"} aria-controls="account-password" aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)} disabled={busy}>
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </span>
           </label>
           {register && <p id="password-hint" className="form-hint">Не менее 12 символов.</p>}
           {error && <div role="alert" className="error-banner">{error}</div>}
@@ -71,10 +77,11 @@ export function AuthForm() {
         </form>
         <p className="auth-switch">
           {register ? "Уже есть аккаунт?" : "Нет аккаунта?"}{" "}
-          <button type="button" onClick={() => { setRegister(!register); setError(""); }}>
+          <button type="button" disabled={busy} onClick={() => { setRegister(!register); setShowPassword(false); setError(""); }}>
             {register ? "Войти" : "Создать аккаунт"}
           </button>
         </p>
+        <a className="auth-telegram" href="https://t.me/PAXVEIL_Bot"><Send size={16} aria-hidden="true" /> Продолжить в Telegram</a>
       </div>
       <p className="auth-footnote">PAXVEIL · Python-зависимости</p>
     </main>

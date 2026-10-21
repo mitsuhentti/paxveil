@@ -1,0 +1,5 @@
+# Optional loopback API access for local development and OpenAPI inspection.
+# The default bot deployment publishes no API or PostgreSQL ports.
+services:
+  api:
+    ports: ['127.0.0.1:8000:8000']

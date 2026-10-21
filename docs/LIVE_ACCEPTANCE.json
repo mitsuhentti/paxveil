@@ -1,7 +1,7 @@
 {
-  "checked_at": "2026-10-09T23:16:17Z",
+  "checked_at": "2026-10-12T19:34:42Z",
   "api": "http://127.0.0.1:8000",
-  "username": "validation_bce4a25b",
+  "username": "validation_d42b36a3",
   "checks": {
     "health": {
       "status": "ok",
@@ -16,7 +16,7 @@
       "stats": {
         "dependencies": 1,
         "findings": 3,
-        "duration_seconds": 21.563
+        "duration_seconds": 3.781
       },
       "completeness": "recorded_versions_checked",
       "advisories": [
@@ -28,7 +28,7 @@
         {
           "name": "PyPI",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:19.132531+00:00",
+          "fetched_at": "2026-10-12T19:34:45.155318+00:00",
           "requests": 1,
           "snapshots": [
             "09de990be73638936541828d7980bd549caf8d5b6a7abc07ff40403802dfe2bd"
@@ -37,31 +37,31 @@
         {
           "name": "OSV",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:21.158846+00:00",
+          "fetched_at": "2026-10-12T19:34:47.188620+00:00",
           "requests": 7,
           "snapshots": [
             "6fd04bd18dcde9068367117bfbb9ed42cd4689d79650469a1546834fa9f5bc04",
+            "d7087a1eaa73a35a525a245b04314d07e4904467b26832826ed0d5a67ef2fb92",
+            "2507477f6d93da1704980a8fffc944a69c33b59614ae9461c8fc39c8974e3895",
+            "a9b5139257f04d550ba18514a96856925b57d48c0e9f57b6fa8f18eb9159b46b",
             "ce753ac2dc7852f390e42ed60f9da1c0ac9b50d533a9fd24b79429a6d7269bb2",
             "73c69dc692cd795881eb3c77fcb1418630d3e84338daf3068c127f730baa795d",
-            "2507477f6d93da1704980a8fffc944a69c33b59614ae9461c8fc39c8974e3895",
-            "609c3726ba04ee960e9632d5b67facb792163ed117707656432d58b90bd29a00",
-            "d7087a1eaa73a35a525a245b04314d07e4904467b26832826ed0d5a67ef2fb92",
-            "a9b5139257f04d550ba18514a96856925b57d48c0e9f57b6fa8f18eb9159b46b"
+            "609c3726ba04ee960e9632d5b67facb792163ed117707656432d58b90bd29a00"
           ]
         },
         {
           "name": "FIRST EPSS",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:21.589694+00:00",
+          "fetched_at": "2026-10-12T19:34:47.521296+00:00",
           "requests": 1,
           "snapshots": [
-            "9fe9d79335e2bb6ca1a7ddecce944c316dab9917257f08fe234938cd58ad6a75"
+            "608dfb7d0f55a4d45151dea571297be9ea2380352328899ea6df4d1bd8f563de"
           ]
         },
         {
           "name": "CISA KEV",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:39.294599+00:00",
+          "fetched_at": "2026-10-12T19:34:47.827578+00:00",
           "requests": 1,
           "snapshots": [
             "1cc9aabdbcbb97bd18962de02d49312ae5b567167ed9604e68f963957e4ee6f6"
@@ -70,7 +70,7 @@
         {
           "name": "deps.dev",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:39.666218+00:00",
+          "fetched_at": "2026-10-12T19:34:48.288880+00:00",
           "requests": 1,
           "snapshots": [
             "32cef054c1cefe16613855cdf669696f9c2dd2b63b811ec1ca3b2d7ab7feb1b1"
@@ -90,175 +90,6 @@
       "cve": "CVE-2024-35195",
       "status": "confirmed",
       "advisories": [
-        {
-          "id": "CVE-2024-35195",
-          "aliases": [
-            "GHSA-9wx4-h78v-vm56",
-            "PYSEC-2026-1873"
-          ],
-          "summary": "Requests `Session` object does not verify requests after making first request with verify=False",
-          "references": [
-            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IYLSNK5TL46Q6XPRVMHVWS63MVJQOK4Q/",
-            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/N7WP6EYDSUOCOJYHDK5NX43PYZ4SNHGZ/",
-            "https://github.com/CVEProject/cvelistV5/tree/main/cves/2024/35xxx/CVE-2024-35195.json",
-            "https://github.com/psf/requests/security/advisories/GHSA-9wx4-h78v-vm56",
-            "https://nvd.nist.gov/vuln/detail/CVE-2024-35195",
-            "https://github.com/psf/requests/commit/a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac",
-            "https://github.com/psf/requests/pull/6655"
-          ],
-          "affected": [
-            {
-              "ranges": [
-                {
-                  "type": "GIT",
-                  "repo": "https://github.com/psf/requests",
-                  "events": [
-                    {
-                      "introduced": "0"
-                    },
-                    {
-                      "fixed": "a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac"
-                    }
-                  ],
-                  "database_specific": {
-                    "source": [
-                      "AFFECTED_FIELD",
-                      "REFERENCES"
-                    ],
-                    "extracted_events": [
-                      {
-                        "introduced": "0"
-                      },
-                      {
-                        "fixed": "2.32.0"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "versions": [
-                "v2.31.0",
-                "v2.30.0",
-                "v2.29.0",
-                "v2.28.2",
-                "v2.28.1",
-                "v2.28.0",
-                "v2.27.1",
-                "v2.27.0",
-                "v2.26.0",
-                "v2.25.1",
-                "v2.25.0",
-                "v2.24.0",
-                "v2.20.1",
-                "v2.19.1",
-                "v2.19.0",
-                "v2.18.3",
-                "v2.18.2",
-                "v2.17.3",
-                "v2.17.1",
-                "v2.17.0",
-                "v2.16.5",
-                "v2.16.4",
-                "v2.16.2",
-                "v2.16.1",
-                "v2.16.0",
-                "v2.15.1",
-                "v2.16.3",
-                "v2.15.0",
-                "v2.14.2",
-                "v2.14.1",
-                "v2.14.0",
-                "v2.12.5",
-                "v2.12.4",
-                "v2.12.3",
-                "v2.12.2",
-                "v2.12.0",
-                "v2.12.1",
-                "v2.11.1",
-                "v2.11.0",
-                "v2.10.0",
-                "v2.9.2",
-                "v2.9.1",
-                "v2.9.0",
-                "v2.8.1",
-                "v2.8.0",
-                "v2.6.0",
-                "v2.5.2",
-                "v2.5.1",
-                "v2.5.0",
-                "v2.4.3",
-                "v2.4.2",
-                "v2.4.1",
-                "v2.4.0",
-                "v2.3.0",
-                "v2.2.1",
-                "v2.2.0",
-                "v2.1.0",
-                "v2.0.1",
-                "v2.0.0",
-                "v2.0",
-                "2.0",
-                "v1.2.3",
-                "v1.2.2",
-                "v1.2.1",
-                "v1.2.0",
-                "v1.1.0",
-                "v1.0.4",
-                "v1.0.3",
-                "v1.0.2",
-                "v1.0.1",
-                "v1.0.0",
-                "v0.14.2",
-                "v0.14.0",
-                "v0.14.1",
-                "v0.13.9",
-                "v0.13.7",
-                "v0.13.6",
-                "v0.13.5",
-                "v0.13.4",
-                "v0.13.3",
-                "v0.13.2",
-                "v0.13.1",
-                "v0.13.0",
-                "v0.12.1",
-                "v0.12.0",
-                "v0.11.1",
-                "v0.10.8",
-                "v0.10.7",
-                "v0.10.6",
-                "v0.10.5",
-                "v0.10.4",
-                "v0.10.3",
-                "v0.10.2",
-                "v0.10.1",
-                "v0.10.0",
-                "v0.9.3",
-                "v0.9.1",
-                "v0.9.0",
-                "v0.8.9",
-                "v0.8.8",
-                "v0.6.4",
-                "v0.6.3",
-                "v0.5.1",
-                "v0.5.0",
-                "v0.4.1",
-                "v0.4.0",
-                "v0.3.4",
-                "v0.3.3",
-                "v0.3.2",
-                "v0.3.0",
-                "v0.2.4",
-                "v0.2.3",
-                "v0.2.2",
-                "v0.2.1",
-                "v0.2.0"
-              ],
-              "database_specific": {
-                "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2024-35195.json"
-              }
-            }
-          ]
-        },
         {
           "id": "GHSA-9wx4-h78v-vm56",
           "aliases": [
@@ -453,11 +284,180 @@
               }
             }
           ]
+        },
+        {
+          "id": "CVE-2024-35195",
+          "aliases": [
+            "GHSA-9wx4-h78v-vm56",
+            "PYSEC-2026-1873"
+          ],
+          "summary": "Requests `Session` object does not verify requests after making first request with verify=False",
+          "references": [
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IYLSNK5TL46Q6XPRVMHVWS63MVJQOK4Q/",
+            "https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/N7WP6EYDSUOCOJYHDK5NX43PYZ4SNHGZ/",
+            "https://github.com/CVEProject/cvelistV5/tree/main/cves/2024/35xxx/CVE-2024-35195.json",
+            "https://github.com/psf/requests/security/advisories/GHSA-9wx4-h78v-vm56",
+            "https://nvd.nist.gov/vuln/detail/CVE-2024-35195",
+            "https://github.com/psf/requests/commit/a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac",
+            "https://github.com/psf/requests/pull/6655"
+          ],
+          "affected": [
+            {
+              "ranges": [
+                {
+                  "type": "GIT",
+                  "repo": "https://github.com/psf/requests",
+                  "events": [
+                    {
+                      "introduced": "0"
+                    },
+                    {
+                      "fixed": "a58d7f2ffb4d00b46dca2d70a3932a0b37e22fac"
+                    }
+                  ],
+                  "database_specific": {
+                    "source": [
+                      "AFFECTED_FIELD",
+                      "REFERENCES"
+                    ],
+                    "extracted_events": [
+                      {
+                        "introduced": "0"
+                      },
+                      {
+                        "fixed": "2.32.0"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "versions": [
+                "v2.31.0",
+                "v2.30.0",
+                "v2.29.0",
+                "v2.28.2",
+                "v2.28.1",
+                "v2.28.0",
+                "v2.27.1",
+                "v2.27.0",
+                "v2.26.0",
+                "v2.25.1",
+                "v2.25.0",
+                "v2.24.0",
+                "v2.20.1",
+                "v2.19.1",
+                "v2.19.0",
+                "v2.18.3",
+                "v2.18.2",
+                "v2.17.3",
+                "v2.17.1",
+                "v2.17.0",
+                "v2.16.5",
+                "v2.16.4",
+                "v2.16.2",
+                "v2.16.1",
+                "v2.16.0",
+                "v2.15.1",
+                "v2.16.3",
+                "v2.15.0",
+                "v2.14.2",
+                "v2.14.1",
+                "v2.14.0",
+                "v2.12.5",
+                "v2.12.4",
+                "v2.12.3",
+                "v2.12.2",
+                "v2.12.0",
+                "v2.12.1",
+                "v2.11.1",
+                "v2.11.0",
+                "v2.10.0",
+                "v2.9.2",
+                "v2.9.1",
+                "v2.9.0",
+                "v2.8.1",
+                "v2.8.0",
+                "v2.6.0",
+                "v2.5.2",
+                "v2.5.1",
+                "v2.5.0",
+                "v2.4.3",
+                "v2.4.2",
+                "v2.4.1",
+                "v2.4.0",
+                "v2.3.0",
+                "v2.2.1",
+                "v2.2.0",
+                "v2.1.0",
+                "v2.0.1",
+                "v2.0.0",
+                "v2.0",
+                "2.0",
+                "v1.2.3",
+                "v1.2.2",
+                "v1.2.1",
+                "v1.2.0",
+                "v1.1.0",
+                "v1.0.4",
+                "v1.0.3",
+                "v1.0.2",
+                "v1.0.1",
+                "v1.0.0",
+                "v0.14.2",
+                "v0.14.0",
+                "v0.14.1",
+                "v0.13.9",
+                "v0.13.7",
+                "v0.13.6",
+                "v0.13.5",
+                "v0.13.4",
+                "v0.13.3",
+                "v0.13.2",
+                "v0.13.1",
+                "v0.13.0",
+                "v0.12.1",
+                "v0.12.0",
+                "v0.11.1",
+                "v0.10.8",
+                "v0.10.7",
+                "v0.10.6",
+                "v0.10.5",
+                "v0.10.4",
+                "v0.10.3",
+                "v0.10.2",
+                "v0.10.1",
+                "v0.10.0",
+                "v0.9.3",
+                "v0.9.1",
+                "v0.9.0",
+                "v0.8.9",
+                "v0.8.8",
+                "v0.6.4",
+                "v0.6.3",
+                "v0.5.1",
+                "v0.5.0",
+                "v0.4.1",
+                "v0.4.0",
+                "v0.3.4",
+                "v0.3.3",
+                "v0.3.2",
+                "v0.3.0",
+                "v0.2.4",
+                "v0.2.3",
+                "v0.2.2",
+                "v0.2.1",
+                "v0.2.0"
+              ],
+              "database_specific": {
+                "source": "https://storage.googleapis.com/cve-osv-conversion/osv-output/CVE-2024-35195.json"
+              }
+            }
+          ]
         }
       ],
       "matches": [
         {
-          "project_id": "0c8902ad-7fde-41e8-ba6a-b12c131ed1c4",
+          "project_id": "13c856a7-75cc-4b3a-bac2-a13fbc3d4a36",
           "project_name": "Requests live validation",
           "package": "requests",
           "version": "2.31.0",
@@ -488,11 +488,11 @@
         {
           "name": "OSV",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:40.758508+00:00",
+          "fetched_at": "2026-10-12T19:34:50.129501+00:00",
           "requests": 2,
           "snapshots": [
-            "099288ab5ddc14855dd934357b4556e32250df1d5697af4f6ee2dd9b2d00fb82",
-            "d7087a1eaa73a35a525a245b04314d07e4904467b26832826ed0d5a67ef2fb92"
+            "d7087a1eaa73a35a525a245b04314d07e4904467b26832826ed0d5a67ef2fb92",
+            "099288ab5ddc14855dd934357b4556e32250df1d5697af4f6ee2dd9b2d00fb82"
           ]
         }
       ]
@@ -502,14 +502,14 @@
       "stats": {
         "dependencies": 1,
         "findings": 0,
-        "duration_seconds": 13.094
+        "duration_seconds": 1.704
       },
       "completeness": "recorded_versions_checked",
       "sources": [
         {
           "name": "PyPI",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:42.124430+00:00",
+          "fetched_at": "2026-10-12T19:34:50.962845+00:00",
           "requests": 1,
           "snapshots": [
             "0f7535b55b6fac29e71052d66bbf744fc6da77b90daa005d770d3f548a27cb57"
@@ -518,7 +518,7 @@
         {
           "name": "OSV",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:51.310730+00:00",
+          "fetched_at": "2026-10-12T19:34:51.646168+00:00",
           "requests": 1,
           "snapshots": [
             "a0460b2895f6918d679db4ec8ceaa94dc85b501d9060c02839d05e919aac5e31"
@@ -527,7 +527,7 @@
         {
           "name": "deps.dev",
           "status": "ok",
-          "fetched_at": "2026-10-09T23:16:54.810130+00:00",
+          "fetched_at": "2026-10-12T19:34:52.113664+00:00",
           "requests": 1,
           "snapshots": [
             "39a4ffbe3c0a0713dbbd4efe999b4111c14ba75cf0556b5a40cc833fc47fff8a"
@@ -577,147 +577,20 @@
             "known_vulnerabilities": 3,
             "completeness": "recorded_versions_checked"
           },
-          "after": {
-            "dependencies": 5,
-            "findings": 0,
-            "known_vulnerabilities": 0,
-            "completeness": "recorded_versions_checked"
-          },
-          "conflicts": [],
+          "after": null,
+          "conflicts": [
+            "error: Request failed after 1 retry in 21.8s\n  cause: Failed to fetch: [index URL]\n  cause: error sending request for url ([index URL]\n  cause: client error (Connect)\n  cause: operation timed out"
+          ],
           "uncertainties": [
-            "A requirements file does not establish whether all transitive dependencies are pinned. Submitted entries are treated as roots for simulation.",
-            "This is a known-vulnerability version analysis. Application reachability and exploitability are not tested."
+            "No valid binary-only resolution was produced. Vulnerabilities after this proposal were not evaluated."
           ],
           "graph_changes": {
-            "added": [
-              {
-                "package": "certifi",
-                "version": "2026.7.22"
-              },
-              {
-                "package": "charset-normalizer",
-                "version": "3.5.2"
-              },
-              {
-                "package": "idna",
-                "version": "3.20"
-              },
-              {
-                "package": "urllib3",
-                "version": "2.8.0"
-              }
-            ],
+            "added": [],
             "removed": [],
-            "changed": [
-              {
-                "package": "requests",
-                "from": "2.31.0",
-                "to": "2.34.2"
-              }
-            ]
+            "changed": []
           },
           "reason": "Newest stable release in the same major family, subject to recorded non-pin bounds.",
-          "status": "resolved",
-          "after_findings": [],
-          "resolver": "uv pip compile; binary metadata only; PyPI allowlist; no installation",
-          "after_graph": {
-            "nodes": [
-              {
-                "id": "certifi==2026.7.22",
-                "name": "certifi",
-                "version": "2026.7.22",
-                "direct": true,
-                "status": "active"
-              },
-              {
-                "id": "charset-normalizer==3.5.2",
-                "name": "charset-normalizer",
-                "version": "3.5.2",
-                "direct": true,
-                "status": "active"
-              },
-              {
-                "id": "idna==3.20",
-                "name": "idna",
-                "version": "3.20",
-                "direct": true,
-                "status": "active"
-              },
-              {
-                "id": "requests==2.34.2",
-                "name": "requests",
-                "version": "2.34.2",
-                "direct": true,
-                "status": "active"
-              },
-              {
-                "id": "urllib3==2.8.0",
-                "name": "urllib3",
-                "version": "2.8.0",
-                "direct": true,
-                "status": "active"
-              }
-            ],
-            "edges": [
-              {
-                "source": "requests==2.34.2",
-                "target": "charset-normalizer==3.5.2",
-                "source_type": "PyPI release metadata"
-              },
-              {
-                "source": "requests==2.34.2",
-                "target": "idna==3.20",
-                "source_type": "PyPI release metadata"
-              },
-              {
-                "source": "requests==2.34.2",
-                "target": "urllib3==2.8.0",
-                "source_type": "PyPI release metadata"
-              },
-              {
-                "source": "requests==2.34.2",
-                "target": "certifi==2026.7.22",
-                "source_type": "PyPI release metadata"
-              }
-            ]
-          },
-          "sources": [
-            {
-              "name": "PyPI",
-              "status": "ok",
-              "fetched_at": "2026-10-09T23:17:02.325531+00:00",
-              "requests": 5,
-              "snapshots": [
-                "fa796f71c633880234ef864ebdfb1e3b632ece7465bf907da7ca27fb86b48b3f",
-                "a48539c09bf764f22c3c0ae64d3b9f932187a65eb8f0d62f3adef9ef7b8b527d",
-                "0c97aff428cfaada03b1ab0233319e4a295badb7a2fa2a383840789a8e14de63",
-                "48138cba23b889f83fe248ff473e33282dc4713a10c70c4505c2ab51e610c39a",
-                "91f3f66a53a9fdabeb35df770b62cc0f185cf1b7fbe2ddb4982454ac0093ddc8"
-              ]
-            },
-            {
-              "name": "OSV",
-              "status": "ok",
-              "fetched_at": "2026-10-09T23:17:02.997534+00:00",
-              "requests": 1,
-              "snapshots": [
-                "75f196f26b823bd31225287828f28e3ce63dda93cce61d54965a97dd460b3faf"
-              ]
-            },
-            {
-              "name": "deps.dev",
-              "status": "ok",
-              "fetched_at": "2026-10-09T23:17:03.571455+00:00",
-              "requests": 5,
-              "snapshots": [
-                "17f5b05d1ca88efede9514fd89054c2e2281ea9525bccdb090a3f5cafa05646d",
-                "148f492669176d2ec1b7c6fc80f1c4e23659509ab8d27188b32f0004314e36b6",
-                "38133bf803517dcae9f712eb7eb493d89755954c0900eb8165ed1a02eb8ad740",
-                "b6d2e8bc93f2907ce5d00f10dd36b8b60fbdb01e6a0776ac50850ea62744d898",
-                "db49e9875989cdbb863bcfcd820de8e83b6f1a21fb36e00666e2c2bb1ebbb7ff"
-              ]
-            }
-          ]
+          "status": "conflict"
         },
         {
           "name": "Maximum Coverage",
@@ -843,11 +716,11 @@
             {
               "name": "PyPI",
               "status": "cached",
-              "fetched_at": "2026-10-09T23:17:02.325531+00:00",
+              "fetched_at": "2026-10-11T20:14:40.807364+00:00",
               "requests": 5,
               "snapshots": [
-                "fa796f71c633880234ef864ebdfb1e3b632ece7465bf907da7ca27fb86b48b3f",
                 "0c97aff428cfaada03b1ab0233319e4a295badb7a2fa2a383840789a8e14de63",
+                "fa796f71c633880234ef864ebdfb1e3b632ece7465bf907da7ca27fb86b48b3f",
                 "a48539c09bf764f22c3c0ae64d3b9f932187a65eb8f0d62f3adef9ef7b8b527d",
                 "48138cba23b889f83fe248ff473e33282dc4713a10c70c4505c2ab51e610c39a",
                 "91f3f66a53a9fdabeb35df770b62cc0f185cf1b7fbe2ddb4982454ac0093ddc8"
@@ -855,8 +728,8 @@
             },
             {
               "name": "OSV",
-              "status": "cached",
-              "fetched_at": "2026-10-09T23:16:30.362638+00:00",
+              "status": "ok",
+              "fetched_at": "2026-10-12T19:35:22.907878+00:00",
               "requests": 1,
               "snapshots": [
                 "75f196f26b823bd31225287828f28e3ce63dda93cce61d54965a97dd460b3faf"
@@ -865,14 +738,14 @@
             {
               "name": "deps.dev",
               "status": "cached",
-              "fetched_at": "2026-10-09T23:17:03.571455+00:00",
+              "fetched_at": "2026-10-11T20:14:42.403427+00:00",
               "requests": 5,
               "snapshots": [
                 "db49e9875989cdbb863bcfcd820de8e83b6f1a21fb36e00666e2c2bb1ebbb7ff",
                 "b6d2e8bc93f2907ce5d00f10dd36b8b60fbdb01e6a0776ac50850ea62744d898",
-                "17f5b05d1ca88efede9514fd89054c2e2281ea9525bccdb090a3f5cafa05646d",
                 "148f492669176d2ec1b7c6fc80f1c4e23659509ab8d27188b32f0004314e36b6",
-                "38133bf803517dcae9f712eb7eb493d89755954c0900eb8165ed1a02eb8ad740"
+                "38133bf803517dcae9f712eb7eb493d89755954c0900eb8165ed1a02eb8ad740",
+                "17f5b05d1ca88efede9514fd89054c2e2281ea9525bccdb090a3f5cafa05646d"
               ]
             }
           ]
@@ -888,8 +761,8 @@
       "sources": [
         {
           "name": "PyPI",
-          "status": "cached",
-          "fetched_at": "2026-10-09T23:06:29.108175+00:00",
+          "status": "ok",
+          "fetched_at": "2026-10-12T19:34:54.781069+00:00",
           "requests": 1,
           "snapshots": [
             "02b7fbbef757148b4d6d1b2b8c6ef74ce129db0c81bec6c067c3b715e3805373"
@@ -898,7 +771,7 @@
       ]
     }
   },
-  "project_id": "0c8902ad-7fde-41e8-ba6a-b12c131ed1c4",
-  "scan_id": "dfc6e81a-6233-49b9-ba9f-a6ec81395153",
-  "duration_seconds": 49.851
+  "project_id": "13c856a7-75cc-4b3a-bac2-a13fbc3d4a36",
+  "scan_id": "0a62c28a-18e8-4d0e-8c18-649a63259493",
+  "duration_seconds": 42.153
 }

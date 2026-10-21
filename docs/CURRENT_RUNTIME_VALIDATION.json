@@ -1,0 +1,221 @@
+{
+  "verified_at": "2026-10-21T13:54:26.552508+00:00",
+  "scope": "Current read-only local HTTP, PostgreSQL, exact PID/start-time, EFS and TCP observations; no outgoing messages or user updates consumed",
+  "hosting": "Owner's Windows computer; no paid hosting",
+  "http": {
+    "api_health": {
+      "http_status": 200
+    },
+    "web": {
+      "http_status": 200
+    }
+  },
+  "database": {
+    "revision": "b59a10",
+    "active_jobs_observed": 0,
+    "job_counts_by_status": {
+      "failed": 1,
+      "succeeded": 23
+    }
+  },
+  "native": {
+    "processes": [
+      {
+        "role": "postgres",
+        "pid": 33724,
+        "recorded_started_at": "2026-10-21T13:53:25.9475567Z",
+        "observed_started_at": "2026-10-21T13:53:25.9475567Z",
+        "start_time_matches": true,
+        "observation_error_type": null
+      },
+      {
+        "role": "api",
+        "pid": 24828,
+        "recorded_started_at": "2026-10-21T13:53:28.2126129Z",
+        "observed_started_at": "2026-10-21T13:53:28.2126129Z",
+        "start_time_matches": true,
+        "observation_error_type": null
+      },
+      {
+        "role": "worker",
+        "pid": 36456,
+        "recorded_started_at": "2026-10-21T13:53:28.2361042Z",
+        "observed_started_at": "2026-10-21T13:53:28.2361042Z",
+        "start_time_matches": true,
+        "observation_error_type": null
+      },
+      {
+        "role": "web",
+        "pid": 2528,
+        "recorded_started_at": "2026-10-21T13:53:28.2659269Z",
+        "observed_started_at": "2026-10-21T13:53:28.2659269Z",
+        "start_time_matches": true,
+        "observation_error_type": null
+      },
+      {
+        "role": "bot",
+        "pid": 36448,
+        "recorded_started_at": "2026-10-21T13:53:28.2897019Z",
+        "observed_started_at": "2026-10-21T13:53:28.2897019Z",
+        "start_time_matches": true,
+        "observation_error_type": null
+      }
+    ],
+    "supervisor": {
+      "pid": 39904,
+      "recorded_started_at": "2026-10-21T13:53:33.3937094Z",
+      "observed_started_at": "2026-10-21T13:53:33.3937094Z",
+      "start_time_matches": true,
+      "observation_error_type": null
+    },
+    "windows_signin_entry_configured": true,
+    "process_observation_at": "2026-10-21T13:54:26.259700+00:00",
+    "supervision_enabled": true,
+    "daily_backup_checkpoint_present": true,
+    "isolated_supervisor_validation_passed": true,
+    "isolated_supervisor_check_count": 19,
+    "protection_helper_sha256": "6f5d80893fd29f7203b64cb6f7f0fbca353cffd36b4f9da82ce056aca0466e2d"
+  },
+  "at_rest": {
+    "method": "Windows EFS",
+    "checked_at": "2026-10-21T13:54:26.552508+00:00",
+    "database": {
+      "file_count": 1381,
+      "unencrypted_file_count": 0,
+      "unreadable_file_count": 0,
+      "all_files_encrypted": true,
+      "directory_encrypted": true
+    },
+    "private_backups": {
+      "file_count": 4,
+      "unencrypted_file_count": 0,
+      "unreadable_file_count": 0,
+      "all_files_encrypted": true,
+      "directory_encrypted": true
+    },
+    "rotating_logs": {
+      "file_count": 3,
+      "unencrypted_file_count": 0,
+      "unreadable_file_count": 0,
+      "all_files_encrypted": true,
+      "directory_encrypted": true
+    },
+    "all_runtime_log_files": {
+      "file_count": 18,
+      "unencrypted_file_count": 0,
+      "unreadable_file_count": 0,
+      "all_files_encrypted": true
+    },
+    "runtime_root_files": {
+      "file_count": 27,
+      "unencrypted_file_count": 0,
+      "unreadable_file_count": 0,
+      "all_files_encrypted": true
+    },
+    "runtime_directory_encrypted": true,
+    "secret_file_encrypted": true,
+    "encryption_operations_log_encrypted": true,
+    "python_environment_or_binary_trees_recursively_encrypted_by_helper": false
+  },
+  "telegram": {
+    "get_me_verified_today": true,
+    "current_connection_status": "official_bot_api_reachable",
+    "tcp_443": {
+      "checked_at": "2026-10-21T13:54:26.539124+00:00",
+      "reachable": true,
+      "error_type": null
+    },
+    "earlier_read_only_probe_today": {
+      "result": "failed",
+      "error_type": "TelegramNetworkError",
+      "reported_by": "scripts/validate-public-bot.py"
+    },
+    "bot_process_running_does_not_verify_delivery": true,
+    "log_error_summary": {
+      "raw_log_lines_exported": false,
+      "inspected_log_file_count": 3,
+      "observed_error_types": [
+        "ClientConnectorError",
+        "TelegramNetworkError"
+      ],
+      "latest_error_observations": [
+        {
+          "error_type": "TelegramNetworkError",
+          "timestamp_as_logged": "2026-10-12 23:58:00,550"
+        },
+        {
+          "error_type": "TelegramNetworkError",
+          "timestamp_as_logged": "2026-10-12 23:58:22,609"
+        },
+        {
+          "error_type": "ClientConnectorError",
+          "timestamp_as_logged": "2026-10-12 23:58:22,609"
+        }
+      ],
+      "timestamps": "Preserved as logged; logger-local timezone was not inferred",
+      "error_observations_are_not_current_connectivity_checks": true
+    },
+    "official_bot_api_verified_at": "2026-10-21T13:54:43.691400+00:00",
+    "official_bot_api": {
+      "username": "PAXVEIL_Bot",
+      "get_me": "passed",
+      "commands": [
+        "delete_account",
+        "environment",
+        "example",
+        "export",
+        "fire",
+        "fixlab",
+        "privacy",
+        "projects",
+        "settings",
+        "start",
+        "vulnerabilities",
+        "watch"
+      ],
+      "russian_commands": [
+        "delete_account",
+        "environment",
+        "example",
+        "export",
+        "fire",
+        "fixlab",
+        "privacy",
+        "projects",
+        "settings",
+        "start",
+        "vulnerabilities",
+        "watch"
+      ],
+      "webhook_configured": false
+    },
+    "read_only_script_retries_after_tcp_recovery": 1,
+    "interactive_telegram_client_acceptance_retested_now": false,
+    "earlier_tcp_observation_today": {
+      "checked_at": "2026-10-21T13:49:00.395285+00:00",
+      "reachable": false
+    }
+  },
+  "backup_restore": {
+    "verified_at": "2026-10-21T13:47:01.888518+00:00",
+    "result": "passed",
+    "archive_bytes": 87355,
+    "table_count": 20,
+    "row_count": 251,
+    "all_table_fingerprints_match": true,
+    "disposable_database_removed": true,
+    "working_database_mutated": false
+  },
+  "limits": [
+    "Official read-only Bot API success does not establish current human-client upload/report/FixLab/Watch acceptance",
+    "The earlier Telegram connection failure and later recovery are point-in-time observations, not continuous availability evidence",
+    "Actual Windows reboot/sign-in and continuous public traffic capacity were not tested",
+    "Historical successful human acceptance observations remain dated separately"
+  ],
+  "sanitization": {
+    "configured_secret_value_scan_passed": true,
+    "raw_log_lines_exported": false,
+    "uploaded_manifests_or_account_data_exported": false
+  },
+  "last_bot_api_followup_at": "2026-10-21T13:54:43.691400+00:00"
+}

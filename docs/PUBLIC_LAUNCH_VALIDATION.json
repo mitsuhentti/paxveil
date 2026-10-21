@@ -1,0 +1,62 @@
+{
+  "verified_at": "2026-10-21T13:54:43.691400+00:00",
+  "hosting": "Owner's Windows computer; no hosting subscription",
+  "availability": "Computer powered on, connected and Windows signed in; manual sleep and shutdown stop service",
+  "scope": "Live read-only HTTP, PostgreSQL and official Telegram Bot API; not a Telegram client upload acceptance check",
+  "api_http_status": 200,
+  "web_http_status": 200,
+  "database_revision": "b59a10",
+  "active_jobs_observed": 0,
+  "telegram": {
+    "username": "PAXVEIL_Bot",
+    "get_me": "passed",
+    "commands": [
+      "delete_account",
+      "environment",
+      "example",
+      "export",
+      "fire",
+      "fixlab",
+      "privacy",
+      "projects",
+      "settings",
+      "start",
+      "vulnerabilities",
+      "watch"
+    ],
+    "russian_commands": [
+      "delete_account",
+      "environment",
+      "example",
+      "export",
+      "fire",
+      "fixlab",
+      "privacy",
+      "projects",
+      "settings",
+      "start",
+      "vulnerabilities",
+      "watch"
+    ],
+    "webhook_configured": false
+  },
+  "native": {
+    "supervisor_state_present": true,
+    "supervision_enabled": true,
+    "daily_backup_checkpoint_present": true
+  },
+  "at_rest": {
+    "method": "Windows EFS; user certificate key stored separately in Windows",
+    "database_files": 1381,
+    "all_database_files_encrypted": true,
+    "private_backup_files": 4,
+    "all_private_backup_files_encrypted": true,
+    "secret_file_encrypted": true,
+    "log_directory_encrypted": true
+  },
+  "remaining": [
+    "Real Telegram upload/report/FixLab/Watch acceptance by a human; controlled handler/API checks are separate",
+    "Windows reboot/sign-in was not simulated as an actual reboot",
+    "No uptime SLA or public traffic capacity benchmark"
+  ]
+}

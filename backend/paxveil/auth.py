@@ -4,7 +4,7 @@ import secrets
 from datetime import timedelta
 
 from fastapi import Depends, HTTPException, Request, Response
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as DBSession
 
 from paxveil.config import get_settings
@@ -29,11 +29,29 @@ def verify_password(password: str, stored: str | None) -> bool:
 
 
 def new_session(db: DBSession, user: User, response: Response | None = None) -> str:
+    # Bound refreshes from the bot and browsers under the same owner lock.
+    db.execute(select(User.id).where(User.id == user.id).with_for_update()).scalar_one()
+    db.execute(
+        delete(Session)
+        .where(Session.user_id == user.id, Session.expires_at <= now())
+        .execution_options(synchronize_session="fetch")
+    )
+    active = db.scalars(select(Session).where(Session.user_id == user.id).order_by(Session.expires_at.desc())).all()
+    for previous in active[get_settings().max_sessions_per_user - 1 :]:
+        db.delete(previous)
     token = secrets.token_urlsafe(32)
     db.add(Session(token_hash=digest(token), user_id=user.id, expires_at=now() + timedelta(days=7)))
     db.commit()
     if response:
-        response.set_cookie("paxveil_session", token, httponly=True, secure=get_settings().secure_cookies, samesite="lax", max_age=604800, path="/")
+        response.set_cookie(
+            "paxveil_session",
+            token,
+            httponly=True,
+            secure=get_settings().secure_cookies,
+            samesite="lax",
+            max_age=604800,
+            path="/",
+        )
     return token
 
 
@@ -64,4 +82,8 @@ def bot_access(request: Request):
 
 
 def user_json(user: User):
-    return {"id": user.id, "username": user.username, "telegram_id": int(user.telegram_id) if user.telegram_id else None}
+    return {
+        "id": user.id,
+        "username": user.username,
+        "telegram_id": int(user.telegram_id) if user.telegram_id else None,
+    }

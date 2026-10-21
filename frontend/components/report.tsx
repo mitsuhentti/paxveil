@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, ArrowUpDown, ChevronRight, AlertTriangle, Info, LoaderCircle } from "lucide-react";
+import { Search, ArrowUpDown, ChevronRight, AlertTriangle, Info, LoaderCircle, ArrowRight } from "lucide-react";
 import type { Finding, Report, Severity } from "@/lib/types";
 import { api, formatDate, json } from "@/lib/api";
 import { Empty, Modal, External, valueText, ErrorBanner, displayText, statusLabel } from "./ui";
@@ -40,15 +40,17 @@ const sourceLabels: Record<string, string> = {
 const epssText = (value: number | null) => value === null ? "н/д" : `${(value * 100).toFixed(2)}%`;
 
 export function ReportView({
-  report, projectId, changed,
+  report, projectId, changed, updates,
 }: {
   report: Report;
   projectId?: string;
   changed?: () => void;
+  updates?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [severity, setSeverity] = useState("all");
   const [sort, setSort] = useState("priority");
+  const [processingStatus, setProcessingStatus] = useState("all");
   const [selected, setSelected] = useState<Finding | null>(null);
   const [dependencyQuery, setDependencyQuery] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
@@ -58,18 +60,22 @@ export function ReportView({
     const filtered = report.findings.filter(finding => {
       const matchesSeverity = severity === "all" || finding.severity === severity;
       const searchText = `${finding.id} ${finding.aliases.join(" ")} ${finding.package} ${finding.summary}`;
-      return matchesSeverity && searchText.toLowerCase().includes(query.toLowerCase());
+      return matchesSeverity && (processingStatus === "all" || finding.status === processingStatus)
+        && searchText.toLowerCase().includes(query.trim().toLowerCase());
     });
     return filtered.sort((a, b) => {
       if (sort === "package") return a.package.localeCompare(b.package);
       if (sort === "epss") return (b.epss ?? -1) - (a.epss ?? -1);
       return b.priority - a.priority;
     });
-  }, [report.findings, severity, query, sort]);
+  }, [report.findings, severity, processingStatus, query, sort]);
   const dependencies = report.dependencies.filter(dependency =>
-    `${dependency.name} ${dependency.version}`.toLowerCase().includes(dependencyQuery.toLowerCase()),
+    `${dependency.name} ${dependency.version}`.toLowerCase().includes(dependencyQuery.trim().toLowerCase()),
   );
   const partial = !["complete", "recorded_versions_checked"].includes(report.completeness);
+  const filtered = Boolean(query.trim()) || severity !== "all" || processingStatus !== "all";
+
+  function resetFilters() { setQuery(""); setSeverity("all"); setProcessingStatus("all"); }
 
   function openFinding(finding: Finding) {
     setSelected(finding);
@@ -117,6 +123,11 @@ export function ReportView({
         </div>
       </div>
 
+      {report.findings.length > 0 && updates && <div className="next-action">
+        <div><strong>Следующий шаг: подобрать обновления</strong><p>Сравните версии, совместимость зависимостей и результат повторной проверки.</p></div>
+        <button className="button secondary" onClick={updates}>Варианты обновления<ArrowRight size={16} /></button>
+      </div>}
+
       <section className="report-section">
         <div className="report-title">
           <h2>Уязвимости <span className="count">{report.findings.length}</span></h2>
@@ -142,6 +153,11 @@ export function ReportView({
             <option value="all">Все уровни риска</option>
             {Object.entries(severityLabels).map(([key, label]) => <option value={key} key={key}>{label}</option>)}
           </select>
+          <select aria-label="Статус уязвимости" value={processingStatus} onChange={event => setProcessingStatus(event.target.value)}>
+            <option value="all">Все статусы</option>
+            <option value="open">Открыта</option><option value="investigating">На проверке</option>
+            <option value="accepted">Риск принят</option><option value="resolved">Закрыта</option>
+          </select>
           <div className="sort-control">
             <ArrowUpDown size={15} />
             <select aria-label="Сортировка уязвимостей" value={sort} onChange={event => setSort(event.target.value)}>
@@ -151,6 +167,7 @@ export function ReportView({
             </select>
           </div>
         </div>
+        {filtered && <div className="filter-summary"><span role="status">Показано {findings.length} из {report.findings.length}</span><button className="text-button" onClick={resetFilters}>Сбросить фильтры</button></div>}
         {findings.length ? (
           <div className="table-scroll">
             <table className="findings-table">
@@ -168,6 +185,7 @@ export function ReportView({
                         {finding.package}<span className="mono">{finding.version}</span>
                       </button>
                       <span className="advisory-id mono">{finding.id}</span>
+                      <span className="finding-table-status">{statusLabel(finding.status)}</span>
                     </td>
                     <td>
                       <span className={`severity ${finding.severity}`}>{severityLabels[finding.severity]}</span>
@@ -194,11 +212,12 @@ export function ReportView({
           </div>
         ) : (
           <Empty
-            title={report.findings.length ? "Нет совпадений с фильтром" : "Известные уязвимости не найдены"}
+            title={report.findings.length ? "Нет совпадений с фильтром" : partial ? "Проверка не завершена полностью" : "Известные уязвимости не найдены"}
             detail={report.findings.length
-              ? "Измените запрос или выберите другой уровень риска."
-              : "Результат относится к указанным версиям и доступным источникам. Проверьте ограничения ниже."}
-          />
+              ? "Измените условия поиска или сбросьте фильтры."
+              : partial ? "Пустой список не подтверждает отсутствие уязвимостей. Проверьте недоступные источники и ограничения ниже."
+                : "Результат относится к указанным версиям и доступным источникам. Проверьте ограничения ниже."}
+          >{filtered && <button className="button secondary" onClick={resetFilters}>Сбросить фильтры</button>}</Empty>
         )}
       </section>
 
@@ -240,6 +259,7 @@ export function ReportView({
             </tbody>
           </table>
         </div>
+        {!dependencies.length && <Empty title="Пакеты не найдены" detail="Попробуйте другое название."><button className="button secondary" onClick={() => setDependencyQuery("")}>Сбросить поиск</button></Empty>}
       </details>
 
       <section className="source-status report-section">
@@ -324,6 +344,7 @@ export function ReportView({
               ))}
             </div>
             <p className="form-hint">Варианты обновления доступны на вкладке «Обновления». Перед применением проверьте совместимость.</p>
+            {updates && <button className="button secondary" onClick={() => { setSelected(null); updates(); }}>Подобрать обновления<ArrowRight size={16} /></button>}
           </div>
         )}
       </Modal>

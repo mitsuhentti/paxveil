@@ -1,0 +1,59 @@
+{
+  "verified_on": "2026-10-21",
+  "scope": "Automated interaction with a real in-app browser against the local production build, using a newly registered QA account and the public example file. UI observations, not a cross-browser test suite or human Telegram acceptance.",
+  "sample": {"filename": "requirements.txt", "content": "requests==2.31.0", "python": "3.11", "platform": "linux"},
+  "checks": {
+    "landing_has_direct_telegram_entry_and_real_example_download": "passed",
+    "registration_and_empty_dashboard": "passed",
+    "explicit_example_selection_does_not_submit": "passed",
+    "cancel_then_reopen_clears_upload_fields": "passed",
+    "submitted_project_progress_reaches_saved_report": "passed",
+    "report_status_filter_empty_state_and_reset": "passed",
+    "report_next_action_opens_updates": "passed",
+    "fixlab_job_survives_navigation_and_reload": "passed",
+    "history_opens_scan_permalink": "passed",
+    "reload_preserves_historical_report": "passed",
+    "latest_report_return": "passed",
+    "history_uses_readable_labels": "passed",
+    "settings_dirty_state_save_and_disabled_saved_button": "passed",
+    "unsaved_settings_restore_after_internal_navigation": "passed",
+    "quiet_hours_error_visible_near_field_and_focuses_missing_end": "passed",
+    "daily_digest_checkbox_and_label_align": "passed",
+    "mobile_header_and_save_action_remain_reachable": "passed",
+    "mobile_menu_escape_restores_focus": "passed",
+    "active_sidebar_route_closes_mobile_menu": "passed",
+    "expanding_mobile_menu_to_desktop_clears_dialog_and_scroll_lock": "passed"
+  },
+  "live_source_observation": {
+    "scan_displayed_at": "2026-10-21 16:36 Europe/Moscow",
+    "displayed_duration_seconds": 4.0,
+    "dependencies": 1,
+    "findings_after_identifier_deduplication": 3,
+    "sources_displayed_as_received": ["PyPI", "OSV", "FIRST EPSS", "CISA KEV", "deps.dev"],
+    "fixlab": {
+      "A": "Insufficient data; after count unknown",
+      "B": "Requests 2.34.2; 3 known findings before, 0 in the resolved proposal",
+      "C": "Requests 2.34.2; 3 known findings before, 0 in the resolved proposal"
+    },
+    "limitation": "These results apply to the recorded versions and current source snapshots. Application code and its tests were not executed. Zero known findings is not a safety guarantee."
+  },
+  "responsive_observation": {
+    "override": {"width": 390, "height": 844},
+    "document_client_width": 375,
+    "document_scroll_width": 375,
+    "page_wide_horizontal_overflow": false,
+    "desktop_dialogs_after_resize": 0,
+    "desktop_inert_elements_after_resize": 0,
+    "desktop_body_inline_overflow_after_resize": "",
+    "viewport_override_reset_after_checks": true
+  },
+  "screenshots": [
+    "screenshots/usability-landing-20261021.jpg",
+    "screenshots/usability-report-20261021.jpg",
+    "screenshots/usability-report-overview-20261021.jpg",
+    "screenshots/usability-report-mobile-20261021.jpg",
+    "screenshots/usability-settings-mobile-20261021.jpg"
+  ],
+  "screenshot_content_edited": false,
+  "remaining_scope": ["Other browser/device combinations", "Real Telegram file, report, FixLab, account-link and Watch delivery acceptance", "Full application compatibility after the proposed dependency update"]
+}

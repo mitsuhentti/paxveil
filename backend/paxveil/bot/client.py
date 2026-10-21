@@ -43,19 +43,22 @@ class ApiClient:
             transport=transport,
         )
         self._sessions: OrderedDict[int, Session] = OrderedDict()
-        self._identity_lock = asyncio.Lock()
+        # Bounded lock stripes collapse duplicate auth for one user without
+        # making every new user wait for an unrelated slow identity request.
+        self._identity_locks = [asyncio.Lock() for _ in range(64)]
 
     async def close(self) -> None:
         self._sessions.clear()
         await self._http.aclose()
 
+    def forget(self, telegram_id: int) -> None:
+        self._sessions.pop(telegram_id, None)
+
     async def _send(self, method: str, path: str, **kwargs: Any) -> Any:
         try:
             response = await self._http.request(method, path, **kwargs)
         except httpx.HTTPError:
-            raise ApiError(
-                "PAXVEIL API временно недоступен. Попробуйте позже."
-            ) from None
+            raise ApiError("PAXVEIL API временно недоступен. Попробуйте позже.") from None
         if not response.is_success:
             messages = {
                 400: "Запрос не принят. Проверьте данные и повторите.",
@@ -67,13 +70,30 @@ class ApiClient:
                 422: "Неверный формат данных. Проверьте файл или параметры.",
                 429: "Слишком много запросов. Подождите немного.",
             }
-            raise ApiError(
-                messages.get(
-                    response.status_code,
-                    "Сервис не смог завершить запрос. Попробуйте позже.",
-                ),
+            message = messages.get(
                 response.status_code,
+                "Сервис не смог завершить запрос. Попробуйте позже.",
             )
+            # Display only an explicit allowlist of quota details, never arbitrary
+            # backend errors, which can include exception paths or user content.
+            if response.status_code in {409, 413, 429}:
+                try:
+                    detail = response.json().get("detail")
+                except (ValueError, AttributeError):
+                    detail = None
+                code = detail.get("code") if isinstance(detail, dict) else detail
+                quota_messages = {
+                    "project_limit": "Достигнут лимит проектов. Удалите ненужный проект и повторите.",
+                    "active_job_limit": "Дождитесь завершения текущих проверок перед новым запросом.",
+                    "analysis_limit": "Лимит проверок на час исчерпан. Повторите позже.",
+                    "storage_limit": "Достигнут лимит хранения файлов. Удалите ненужные проекты и повторите.",
+                    "fire_limit": "Лимит проверок CVE на час исчерпан. Повторите позже.",
+                    "export_limit": "Лимит выгрузок на час исчерпан. Повторите позже.",
+                    "export_size_limit": "Выгрузка превышает 40 МиБ. Удалите ненужные проекты и повторите выгрузку.",
+                }
+                if isinstance(code, str) and code in quota_messages:
+                    message = quota_messages[code]
+            raise ApiError(message, response.status_code)
         if response.status_code == 204:
             return None
         try:
@@ -96,7 +116,7 @@ class ApiClient:
     async def identity(self, telegram_id: int, *, refresh: bool = False) -> Session:
         if telegram_id <= 0:
             raise ApiError("Требуется личный Telegram-аккаунт.")
-        async with self._identity_lock:
+        async with self._identity_locks[telegram_id % len(self._identity_locks)]:
             cached = self._sessions.get(telegram_id)
             if cached and not refresh and time.monotonic() - cached.created < 3600:
                 self._sessions.move_to_end(telegram_id)
@@ -118,9 +138,7 @@ class ApiClient:
         )
         return self._remember(telegram_id, data)
 
-    async def request(
-        self, telegram_id: int, method: str, path: str, **kwargs: Any
-    ) -> Any:
+    async def request(self, telegram_id: int, method: str, path: str, **kwargs: Any) -> Any:
         session = await self.identity(telegram_id)
         try:
             return await self._send(
@@ -133,9 +151,7 @@ class ApiClient:
             if exc.status != 401:
                 raise
         session = await self.identity(telegram_id, refresh=True)
-        return await self._send(
-            method, path, headers={"Authorization": f"Bearer {session.token}"}, **kwargs
-        )
+        return await self._send(method, path, headers={"Authorization": f"Bearer {session.token}"}, **kwargs)
 
     async def projects(self, telegram_id: int) -> list[dict[str, Any]]:
         return await self.request(telegram_id, "GET", "projects")
@@ -144,12 +160,19 @@ class ApiClient:
         return await self.request(telegram_id, "GET", f"projects/{project_id}")
 
     async def upload(
-        self, telegram_id: int, filename: str, content: bytes, name: str
+        self,
+        telegram_id: int,
+        filename: str,
+        content: bytes,
+        name: str,
+        *,
+        python_version: str = "3.11",
+        platform: str = "linux",
     ) -> dict[str, Any]:
         return await self.request(
             telegram_id,
             "POST",
             "projects",
-            data={"name": name, "python_version": "3.11", "platform": "linux"},
+            data={"name": name, "python_version": python_version, "platform": platform},
             files={"file": (filename, content, "text/plain")},
         )

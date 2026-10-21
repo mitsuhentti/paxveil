@@ -5,6 +5,7 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:18.6
@@ -19,14 +20,39 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
       - run: pip install -r backend/requirements.lock
+      - run: python -m ruff check backend/paxveil scripts/database-ops.py
       - run: python -m pytest -q -m 'not integration'
         working-directory: backend
       - run: alembic upgrade head && alembic check
         working-directory: backend
         env:
           DATABASE_URL: postgresql+psycopg://paxveil:ci-only-password@localhost:5432/paxveil
+      - name: Verify real PostgreSQL queue concurrency and recovery
+        run: python scripts/database-ops.py verify-concurrency --evidence "$RUNNER_TEMP/postgres-concurrency.json"
+        env:
+          DATABASE_URL: postgresql+psycopg://paxveil:ci-only-password@localhost:5432/paxveil
+      - name: Verify a private backup restores into an isolated database
+        env:
+          DATABASE_URL: postgresql+psycopg://paxveil:ci-only-password@localhost:5432/paxveil
+          PAXVEIL_PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          python scripts/database-ops.py backup --directory "$RUNNER_TEMP/paxveil-backups" --postgres-container "$PAXVEIL_PG_CONTAINER"
+          python - <<'PY'
+          import os, pathlib, subprocess, sys
+          archive = next((pathlib.Path(os.environ['RUNNER_TEMP']) / 'paxveil-backups').glob('*.dump'))
+          subprocess.run([sys.executable, 'scripts/database-ops.py', 'verify-backup', '--archive', str(archive), '--postgres-container', os.environ['PAXVEIL_PG_CONTAINER'], '--evidence', str(pathlib.Path(os.environ['RUNNER_TEMP']) / 'backup-validation.json')], check=True)
+          PY
+      - name: Save sanitized verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-verification
+          path: |
+            ${{ runner.temp }}/postgres-concurrency.json
+            ${{ runner.temp }}/backup-validation.json
+          if-no-files-found: error
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,3 +61,29 @@ jobs:
         working-directory: frontend
       - run: npm run typecheck && npm run build
         working-directory: frontend
+  containers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable Compose configuration
+        run: cp .env.example .env
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+      - name: Build and start private API and worker
+        run: docker compose up --build --wait -d api worker
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+      - name: Verify API readiness inside its private network
+        run: docker compose exec -T api python -c 'import json, urllib.request; body=json.load(urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=5)); assert body["status"] == "ok" and body["database"] == "postgresql"'
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+      - name: Build optional web container
+        run: docker compose --profile web build web
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+      - name: Remove this job's disposable containers and volumes
+        if: always()
+        run: docker compose down -v --remove-orphans
+        env:
+          POSTGRES_PASSWORD: ci-only-password

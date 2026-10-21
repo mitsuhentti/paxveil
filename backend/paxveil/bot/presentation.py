@@ -11,7 +11,20 @@ from aiogram.types import (
 )
 
 MENU = {
+    "Проверить файл": "upload",
+    "Пример проверки": "example",
+    "Мои проекты": "projects",
+    "Уязвимости": "vulnerabilities",
+    "Варианты обновления": "fixlab",
+    "Проверить CVE": "fire",
+    "Мониторинг": "watch",
+    "Настройки": "settings",
+}
+
+# Reply keyboards remain in Telegram's history after a bot update.
+LEGACY_MENU = {
     "🔍 Проверить проект": "upload",
+    "📎 Пример проверки": "example",
     "📁 Мои проекты": "projects",
     "🛡 Уязвимости": "vulnerabilities",
     "🧪 FixLab": "fixlab",
@@ -58,9 +71,34 @@ STRATEGY_LABELS = {
     "Maximum Coverage": "Полное обновление",
 }
 
+FIRE_LABELS = {
+    "confirmed": "Совпадение уязвимой версии",
+    "possible": "Возможное совпадение",
+    "no_match": "Совпадений не найдено",
+    "insufficient_data": "Недостаточно данных",
+    "unknown": "Нет данных",
+    "found": "Запись найдена",
+    "affected": "Уязвимая версия",
+}
+
+EXPLANATIONS = {
+    "Smallest newer stable release in the same major/minor family, subject to recorded non-pin bounds.": "Ближайшая новая стабильная версия в текущей ветке. Ограничения исходного файла учитываются.",
+    "Newest stable release in the same major family, subject to recorded non-pin bounds.": "Последняя стабильная версия без смены основной версии пакета. Ограничения исходного файла учитываются.",
+    "Newest stable release across major families; original non-pin bounds are relaxed explicitly.": "Последняя стабильная версия, включая новую основную версию. Ограничения исходного файла могут быть ослаблены.",
+    "Resolution uses official PyPI binary metadata; package code and application tests are never executed.": "Расчёт использует метаданные PyPI. Код пакетов и тесты приложения не запускаются.",
+    "A resolved environment is a proposal, not a guarantee of behavioral compatibility.": "Согласованный набор версий ещё нужно проверить тестами вашего приложения.",
+    "A version match does not demonstrate application reachability or exploitability.": "Совпадение версии не доказывает возможность эксплуатации в приложении.",
+    "A single lock file may omit root paths, extras or platform selection.": "В одном lock-файле могут отсутствовать корневые зависимости, дополнительные группы и выбор платформы.",
+}
+
 
 def text(value: Any, limit: int = 300) -> str:
     return escape(str(value)[:limit], quote=True)
+
+
+def explanation(value: Any) -> str:
+    raw = str(value)
+    return EXPLANATIONS.get(raw, raw)
 
 
 def display_label(value: Any, labels: dict[str, str], limit: int = 80) -> str:
@@ -88,20 +126,27 @@ def home_keyboard() -> ReplyKeyboardMarkup:
 def project_keyboard(project: dict[str, Any]) -> InlineKeyboardMarkup:
     pid = str(project["id"])
     enabled = bool(project.get("watch"))
-    return keyboard(
+    latest = project.get("latest_scan") or {}
+    rows = []
+    if latest.get("report"):
+        rows.append([("Открыть отчёт", f"report:{pid}"), ("Варианты обновления", f"strategies:{pid}")])
+    if latest.get("status") in {"queued", "pending", "running", "retry"}:
+        rows.append([("Обновить результат", f"scanrefresh:{pid}")])
+    else:
+        rows.append([("Проверить снова", f"scan:{pid}")])
+    rows.extend(
         [
-            [("📄 Отчёт", f"report:{pid}"), ("🧪 FixLab", f"strategies:{pid}")],
-            [("🔄 Проверить снова", f"scan:{pid}")],
             [
                 (
-                    "🔕 Отключить мониторинг" if enabled else "🔔 Включить мониторинг",
+                    "Отключить мониторинг" if enabled else "Включить мониторинг",
                     f"watch:{pid}:{0 if enabled else 1}",
                 )
             ],
-            [("🗑 Удалить проект", f"delete:{pid}"), ("← Проекты", "list:projects:0")],
-            [("Главное меню", "home")],
+            [("Все проекты", "list:projects:0")],
+            [("Удалить проект", f"delete:{pid}")],
         ]
     )
+    return keyboard(rows)
 
 
 def report_summary(project: dict[str, Any]) -> str:
@@ -110,7 +155,16 @@ def report_summary(project: dict[str, Any]) -> str:
     status = latest.get("status", "Ещё не проверялся")
     title = f"<b>{text(project.get('name', 'Проект'), 80)}</b>"
     if not report:
-        return f"{title}\nПроверка: <code>{display_label(status, STATUS_LABELS, 40)}</code>\nМониторинг: {'включён' if project.get('watch') else 'выключен'}"
+        lines = [
+            title,
+            f"Проверка: <code>{display_label(status, STATUS_LABELS, 40)}</code>",
+            f"Мониторинг: {'включён' if project.get('watch') else 'выключен'}",
+        ]
+        if status in {"queued", "pending", "running", "retry"}:
+            lines.append("Можно вернуться позже. Проверка продолжится, даже если закрыть чат.")
+        elif status == "failed":
+            lines.append("Попробуйте «Проверить снова». Если ошибка повторится, проверьте формат файла.")
+        return "\n".join(lines)
     stats = report.get("stats") or {}
     findings = report.get("findings") or []
     priorities = [f.get("priority", 0) for f in findings if isinstance(f.get("priority"), (float, int))]
@@ -130,6 +184,7 @@ def report_summary(project: dict[str, Any]) -> str:
     if not findings:
         lines.append("Это результат доступных источников; он не гарантирует отсутствие уязвимостей.")
     else:
+        lines.append("Откройте отчёт для деталей или сравните варианты обновления.")
         lines.append("Наличие уязвимой версии не доказывает эксплуатацию в вашем приложении.")
     return "\n".join(lines)
 
@@ -172,7 +227,10 @@ def settings_summary(settings: dict[str, Any]) -> str:
             "/priority 60",
             "/digest on или /digest off",
             "/category new off (new, priority, fix, exploitation, status)",
-            "/link КОД: связать с веб-аккаунтом",
+            "",
+            f"Среда новых проектов: Python {text(settings.get('upload_python_version', '3.11'), 8)} / {text(settings.get('upload_platform', 'linux'), 10)}",
+            "/environment 3.12 windows",
+            "/privacy: данные, выгрузка и удаление аккаунта",
         ]
     )
 
@@ -180,7 +238,7 @@ def settings_summary(settings: dict[str, Any]) -> str:
 def fix_summary(strategy: dict[str, Any], limitations: list[str]) -> str:
     lines = [
         f"<b>FixLab · {display_label(strategy.get('name', 'Вариант обновления'), STRATEGY_LABELS)}</b>",
-        text(strategy.get("reason", ""), 400),
+        text(explanation(strategy.get("reason", "")), 400),
     ]
     lines.append(f"Статус: <code>{display_label(strategy.get('status'), STATUS_LABELS, 60)}</code>")
     updates = strategy.get("updates") or []
@@ -191,7 +249,7 @@ def fix_summary(strategy: dict[str, Any], limitations: list[str]) -> str:
             new = item.get("to", item.get("target", item.get("to_version", "?")))
             lines.append(f"• <code>{text(name, 90)}</code>: {text(old, 50)} → {text(new, 50)}")
     if len(updates) > 8:
-        lines.append(f"Ещё обновлений: {len(updates) - 8}; см. веб-отчёт.")
+        lines.append(f"Ещё обновлений: {len(updates) - 8}; полный список в JSON-файле.")
     for label, key in [("До", "before"), ("После", "after")]:
         stats = strategy.get(key)
         if isinstance(stats, dict):
@@ -208,6 +266,6 @@ def fix_summary(strategy: dict[str, Any], limitations: list[str]) -> str:
         if values:
             lines.append(f"{label}: " + text("; ".join(map(str, values[:2])), 350))
     if limitations:
-        lines.append("Ограничения: " + text("; ".join(map(str, limitations[:2])), 400))
+        lines.append("Ограничения: " + text("; ".join(map(explanation, limitations[:2])), 400))
     lines.append("Это модель обновления. Перед применением нужны тесты совместимости.")
     return "\n".join(lines)

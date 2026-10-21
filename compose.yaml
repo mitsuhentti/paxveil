@@ -1,4 +1,9 @@
 name: paxveil
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
 x-backend: &backend
   build: ./backend
   env_file: .env
@@ -10,6 +15,12 @@ x-backend: &backend
     - source-cache:/app/runtime
   security_opt: [no-new-privileges:true]
   cap_drop: [ALL]
+  read_only: true
+  tmpfs: ['/tmp:rw,noexec,nosuid,size=268435456']
+  init: true
+  pids_limit: 128
+  stop_grace_period: 30s
+  logging: *logging
   restart: unless-stopped
 services:
   db:
@@ -25,6 +36,9 @@ services:
       timeout: 5s
       retries: 20
     restart: unless-stopped
+    shm_size: 128m
+    stop_grace_period: 60s
+    logging: *logging
   migrate:
     <<: *backend
     command: [alembic, upgrade, head]
@@ -33,7 +47,6 @@ services:
       db: {condition: service_healthy}
   api:
     <<: *backend
-    ports: ['127.0.0.1:8000:8000']
     depends_on:
       migrate: {condition: service_completed_successfully}
     healthcheck:
@@ -53,6 +66,7 @@ services:
     depends_on:
       api: {condition: service_healthy}
   web:
+    profiles: [web]
     build: ./frontend
     environment:
       API_INTERNAL_URL: http://api:8000
@@ -62,6 +76,10 @@ services:
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     restart: unless-stopped
+    init: true
+    pids_limit: 128
+    stop_grace_period: 30s
+    logging: *logging
 volumes:
   postgres-data:
   source-cache:

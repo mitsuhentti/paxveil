@@ -1,48 +1,79 @@
-# Automated verification
+# Verification results
 
-## Design update, 12 October 2026
+Latest full run: **21 October 2026**, Windows, project Python 3.11 environment. Evidence below is limited to the checks executed. Historical observations retain their dates.
 
-The affected Telegram handler/API tests were rerun after copy changes: **24 passed, 1 existing framework warning in 5.17 seconds**. Ruff and formatting of bot presentation passed. Only two assertions were adapted to the new labels; API ownership and callback checks retain their earlier behavior. The frontend production build passed, including TypeScript and page generation. Browser checks through the in-app browser are recorded in [DESIGN_REVIEW.md](DESIGN_REVIEW.md). The full backend results below are the 11 October baseline; this update reran affected coverage.
-
-Executed on **2026-10-11** against the delivered working tree on Windows with the project's Python 3.11 environment. Results are bounded evidence of the tested behavior, not a production certification.
-
-## Final backend checks
-
-From `backend`:
-
-```powershell
-python -m pytest -q -m "not integration" -rs
-python -m ruff check paxveil tests
-```
+## Current automated and PostgreSQL checks
 
 | Check | Observed result |
 | --- | --- |
-| Full backend suite | **122 passed, 2 skipped, 1 warning in 32.45 seconds** |
-| Notification/worker subset | **33 passed, 1 warning in 15.49 seconds** |
-| Streamed multipart security regression | **1 passed, 1 warning in 1.25 seconds** |
-| Ruff on backend source and tests | **All checks passed** |
-| Suite cases | **124 cases: 122 passed and 2 intentionally skipped** |
+| Full backend suite | **178 passed, 2 skipped, 1 warning in 46.75 seconds** |
+| TypeScript checking | Passed |
+| Production frontend build | Passed |
+| Source/service/public-resource subset | 47 passed, 1 existing warning in 12.40 seconds |
+| Database operations script | Ruff and Python compilation passed |
+| Real PostgreSQL concurrency | Passed in a disposable database; working database unchanged |
+| Native supervisor checker | **19/19 passed** after the guard fix |
 
-Both skips are intentional public-source checks in `tests/test_core_integration.py`: `test_real_osv_pypi_and_cve_match` and `test_real_package_with_no_known_osv_matches`. Their exact condition is `PAXVEIL_LIVE_TESTS != "1"`; the reason is: "Set PAXVEIL_LIVE_TESTS=1 for non-aggressive official public API verification." Those checks remain visible as skips in this invocation because their opt-in guard, rather than the registered `integration` marker, controls execution. This verification did not enable public requests or send Telegram messages. The separate real-source evidence is recorded in `CORE_VALIDATION.json` and `LIVE_ACCEPTANCE.json`.
+The backend invocation, from `backend`, is:
 
-The one warning is `StarletteDeprecationWarning` from the installed FastAPI/Starlette test client: use of its `httpx` adapter is deprecated. It did not fail a check; the current pinned adapter completed the suite. A future framework migration should review this compatibility boundary.
+```powershell
+python -m pytest -q -m "not integration" -rs
+```
 
-## Coverage and limits
+The two skips are deliberate opt-in public-source checks: `test_real_osv_pypi_and_cve_match` and `test_real_package_with_no_known_osv_matches`. They require `PAXVEIL_LIVE_TESTS=1` and were not enabled for this suite. Live official-source evidence is recorded separately in [CORE_VALIDATION.json](CORE_VALIDATION.json) and [LIVE_ACCEPTANCE.json](LIVE_ACCEPTANCE.json).
 
-The suite checks dependency parsing, markers and uncertainty, official-source response validation, source allowlists, durable cache behavior, advisory aliases, affected ranges, priority inputs and metadata resolver restrictions. API checks exercise authentication, cookies, owner isolation, upload validation, account-link expiry and rotation, owner-safe merges, persistent settings, active-job deduplication, deletion cascades and Fire Drill's retained inventory during interrupted rescans.
+The warning is `StarletteDeprecationWarning` concerning the FastAPI/Starlette test client's httpx adapter. It did not fail the suite. The pinned adapter remains a dependency compatibility boundary.
 
-The streamed-upload regression sends an authenticated multipart request through the actual FastAPI ASGI application with an asynchronous byte generator and no Content-Length. The file is small and valid; two ignored padding fields each remain below the multipart parser's per-part limit. Once the cumulative body exceeds 1 MiB plus 16 KiB of multipart allowance, the API returns HTTP 413, stops consuming the stream before its end and creates no project. This verifies the cumulative receive guard rather than obtaining a rejection from the separate file-size or multipart-part limit. The isolated test makes no external source or Telegram request.
+The current real PostgreSQL run checked:
 
-Bot tests use actual aiogram dispatch with controlled Telegram/HTTP transports. A separate component test sends synthetic updates through the real FastAPI ASGI routes, an isolated temporary SQLite database and the durable worker. Notification/worker checks include quiet hours and DST, digests, threshold/category changes, unsubscribe, retry limits, recovery of expired leases, claim-token fencing of stale successes/failures/deliveries, baseline recovery after OSV failure, incomplete-lookup suppression and CVE-alias deduplication.
+- Eight threads and 24 requests to enqueue one project scan, producing one job.
+- 24 pending jobs, 40 claim attempts and 24 distinct claim tokens.
+- Expired-lease recovery and rejection of a stale worker's result.
+- Account deletion during claim, successful analysis and failed analysis.
+- Concurrent shared package/version/advisory ingestion with opposite input ordering.
+- A database request counter shared by independent connections: exactly 11 accepted out of 64 attempts, no counter growth after rejection and recovery at the next fixed window.
 
-Artificial reports and advisory identities are confined to test fixtures. API/worker database tests use temporary SQLite databases, so passing them does not establish PostgreSQL locking behavior under concurrent real processes. These tests also do not establish external Telegram delivery, public hosting, Docker startup, package behavioral compatibility or the standalone browser runner's execution. Consult `FRONTEND_VALIDATION.md`, `TELEGRAM.md`, `REVIEW.md` and the live acceptance evidence for those separate boundaries.
+The verification migrated a disposable database, performed no source requests and removed that database afterward. The working database was not changed. [POSTGRES_CONCURRENCY_VALIDATION.json](POSTGRES_CONCURRENCY_VALIDATION.json) is the sanitized result.
 
-## Deterministic clock correction
+## Coverage
 
-The final verification found a test-fixture defect after the calendar date advanced: notification tests froze the worker clock at 2026-10-10, while their newly created jobs inherited the real 2026-10-11 ORM default for `run_at`. Four tests then failed because those jobs were correctly not yet due according to the frozen worker clock. The shared fixture helper now accepts an explicit `run_at`, and the outbox fixture supplies its frozen instant. No production source change was needed for this correction; all four affected behaviors passed in the final suite.
+The suite covers parsing, environment markers, uncertainty, official-source response validation, allowlists, immutable cache snapshots, byte/key bounds, eviction, legacy migration, physical reclamation and concurrent cache writes. It checks aliases, affected ranges, priority factors and restrictions on metadata resolution.
 
-## Separate executed operational checks
+API/resource coverage includes authentication, cookies, owner isolation, streamed upload limits, one-use linking, safe merges, active-job deduplication, account budgets, rolling job windows, persistent settings, export privacy, deletion cascades, bounded sessions/history and maintenance rotation.
 
-The implementation owner subsequently completed initialization of the prepared runtime, native API/web startup and ordinary graceful PostgreSQL stop/start outside the Windows isolation restriction. Genuine bot polling was verified again after that restart. The owner confirmed that `/start` showed the menu in their actual `@PAXVEIL_Bot` client, and bot logs recorded two handled updates before the final restart. These observations are separate from the 122 automated tests above; see [OPERATIONS_VALIDATION.md](OPERATIONS_VALIDATION.md) for the runtime evidence.
+Bot tests use actual aiogram dispatch with controlled transports. Component checks connect synthetic updates to real FastAPI routes, isolated SQLite storage and the durable worker with controlled analysis data. Notification/worker cases include quiet hours and DST, digests, category/threshold changes, unsubscribe, retries, lease recovery, claim fencing, incomplete-source suppression and baseline recovery.
 
-Human Telegram file uploads, account linking, reports and Watch delivery remain to be accepted through the [live checklist](TELEGRAM.md#verification-boundary-and-live-acceptance-checklist). Docker execution, a fresh-machine bootstrap, backup restoration and PostgreSQL concurrency fault injection remain unverified.
+Fixture reports and advisory names are confined to tests. SQLite cases alone do not establish PostgreSQL locking; that boundary is covered by the separate real PostgreSQL run above.
+
+## Dated operational and live evidence
+
+| Date | Executed observation | Evidence |
+| --- | --- | --- |
+| 11–12 October | Live official-source scan and FixLab proposals; five pinned dependencies, 12 deduplicated findings, zero known OSV findings for resolved Balanced/Maximum proposals | [CORE_VALIDATION.json](CORE_VALIDATION.json) |
+| 11–12 October | Live API upload, persistence, CVE check, Watch settings and foreign-owner rejection | [LIVE_ACCEPTANCE.json](LIVE_ACCEPTANCE.json) |
+| 21 October | Fresh private backup restored into a separate database; 20 tables/251 rows; 87,355 bytes; all fingerprints matched | [BACKUP_VALIDATION.json](BACKUP_VALIDATION.json) |
+| 21 October | API/web HTTP 200, exact process identities, sign-in startup/supervisor and daily backup checkpoint; selected runtime data, logs, private backups and secret file EFS-encrypted | [CURRENT_RUNTIME_VALIDATION.json](CURRENT_RUNTIME_VALIDATION.json) |
+| 21 October, 13:54:43 UTC | Telegram getMe passed, all 12 default/Russian commands matched, no webhook; earlier connection failure recovered | [PUBLIC_LAUNCH_VALIDATION.json](PUBLIC_LAUNCH_VALIDATION.json) |
+| Earlier browser runs | Working UI/API scenarios, desktop/mobile and light/dark screenshots | [FRONTEND_VALIDATION.md](FRONTEND_VALIDATION.md), [DESIGN_REVIEW.md](DESIGN_REVIEW.md) |
+
+A normal stop/start of the existing runtime completed on 21 October, followed by a fresh 19/19 supervisor check: [NATIVE_SUPERVISOR_VALIDATION.json](NATIVE_SUPERVISOR_VALIDATION.json). Earlier performance/memory snapshots are local bounded observations, not capacity measurements.
+
+## Browser acceptance, 21 October
+
+Real browser interaction with the running application covered registration of a QA owner, explicit sample selection, cancellation clearing the selected file, and a genuine requests 2.31.0 scan. That scan finished in about four seconds with three findings and five displayed source entries.
+
+The closed-findings filter returned zero rows and reset restored the result list. A running FixLab task survived navigation and reload. Balanced and Maximum Coverage proposed requests 2.34.2 with zero known findings for the proposal; Minimal Change reported insufficient data. A historical scan permalink survived reload and returned to the latest report; history labels were readable.
+
+Settings exposed unsaved changes and saved successfully, including the Windows upload environment. Owner-specific sessionStorage drafts survived internal navigation. An invalid quiet-hour range displayed an error near the field and focused the missing end time. Mobile content measured 375 pixels without horizontal overflow. The header/save action remained reachable. Escape closed navigation and returned focus; selecting the active route closed the menu, and resizing to desktop removed dialog state and the scroll lock.
+
+[USABILITY_VALIDATION.json](USABILITY_VALIDATION.json) records all 20 checks and five unedited screenshots. These checks do not establish all browser combinations, application compatibility after dependency updates or Telegram-client delivery.
+
+## Human Telegram acceptance
+
+The owner previously confirmed the real `/start` menu, followed by `/privacy`, `/environment` and `/projects`. Today's official Bot API success followed an earlier TelegramNetworkError/TCP failure; it establishes recovery at the recorded time, not continuous availability. Actual client upload/report/FixLab/linking/Watch acceptance remains pending. The new `/example` action invokes real analysis of a public fixture; controlled handler tests are not presented as external Telegram delivery. Continue the [live checklist](TELEGRAM.md#verification-boundary-and-live-acceptance-checklist).
+
+## Unverified boundaries
+
+The complete fresh-checkout bootstrap, Docker execution, remote GitHub Actions, public traffic capacity and uptime are unverified. GitHub publication has not yet been completed. The selected local deployment can stop with the owner's computer or connection.
+
+FixLab verifies release metadata and known advisories, not application behavior or runtime reachability. Zero known findings is a dated analysis result, not a security guarantee. See [current status](../PROJECT_STATUS.md) and [operations](OPERATIONS_VALIDATION.md).

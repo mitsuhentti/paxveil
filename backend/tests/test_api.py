@@ -30,7 +30,7 @@ def api_env(tmp_path, monkeypatch):
     dbm.Base.metadata.create_all(engine)
     factory = sessionmaker(engine, expire_on_commit=False)
     monkeypatch.setattr(api, "settings", settings)
-    api.limits.clear()
+    monkeypatch.setattr(api, "SessionLocal", factory)
 
     def override_db():
         with factory() as db:
@@ -105,7 +105,6 @@ def api_env(tmp_path, monkeypatch):
     for instance in clients:
         instance.close()
     api.app.dependency_overrides.clear()
-    api.limits.clear()
     engine.dispose()
     config.get_settings.cache_clear()
 

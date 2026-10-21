@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Bell, Check, ChevronRight, Folder, History, LayoutGrid, LogOut, Menu, Plus, Radar, Search, Settings2, X } from "lucide-react";
@@ -31,13 +31,17 @@ export function Workspace() {
   const [upload, setUpload] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [toast, setToast] = useState("");
+  const sidebar = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLButtonElement>(null);
   const refresh = useCallback(() => {
-    api<Project[]>("/projects").then(setProjects).catch((failure) => setError(failure.message));
+    api<Project[]>("/projects").then(data => { setProjects(data); setError(""); }).catch((failure) => setError(failure.message));
   }, []);
 
   useEffect(() => {
-    const theme = localStorage.getItem("paxveil-theme");
-    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+    try {
+      const theme = localStorage.getItem("paxveil-theme");
+      if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+    } catch { /* The default theme works when browser storage is unavailable. */ }
     let alive = true;
     async function load() {
       try {
@@ -58,6 +62,35 @@ export function Workspace() {
   }, [router]);
   useEffect(() => { setMobile(false); setError(""); }, [pathname]);
   useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 761px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobile(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+  useEffect(() => {
+    if (!mobile) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const controls = () => Array.from(sidebar.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") || [])
+      .filter(element => element.offsetParent !== null);
+    controls()[0]?.focus();
+    function keydown(event: KeyboardEvent) {
+      if (event.key === "Escape") { event.preventDefault(); setMobile(false); }
+      if (event.key !== "Tab") return;
+      const items = controls();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", keydown);
+      menu.current?.focus();
+    };
+  }, [mobile]);
+  useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 5000);
     return () => clearTimeout(timer);
@@ -69,7 +102,11 @@ export function Workspace() {
   }, [projects, refresh]);
 
   async function logout() {
-    try { await api("/auth/logout", { method: "POST" }); router.replace("/"); }
+    try {
+      await api("/auth/logout", { method: "POST" });
+      if (user) { try { sessionStorage.removeItem(`paxveil-settings-draft:${user.id}`); } catch { /* Storage may be disabled. */ } }
+      router.replace("/");
+    }
     catch (failure) { setError(failure instanceof Error ? failure.message : "Не удалось выйти."); }
   }
 
@@ -81,7 +118,7 @@ export function Workspace() {
   return (
     <div className="workspace">
       <a href="#main" className="skip-link">Перейти к содержимому</a>
-      <aside id="workspace-sidebar" className={`sidebar ${mobile ? "mobile-open" : ""}`}>
+      <aside ref={sidebar} id="workspace-sidebar" className={`sidebar ${mobile ? "mobile-open" : ""}`} role={mobile ? "dialog" : undefined} aria-modal={mobile || undefined} aria-label={mobile ? "Меню приложения" : undefined}>
         <div className="sidebar-brand"><Brand />
           <button className="mobile-close icon-button" onClick={() => setMobile(false)} aria-label="Закрыть меню"><X size={20} /></button>
         </div>
@@ -90,7 +127,7 @@ export function Workspace() {
           {navigation.map((item) => {
             const active = item.path === "/app" ? ["projects", "project"].includes(section) : pathname === item.path;
             return (
-              <Link href={item.path} key={item.path} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
+              <Link href={item.path} key={item.path} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => setMobile(false)}>
                 <item.icon size={18} strokeWidth={1.7} /><span>{item.label}</span>
                 {item.path === "/app/watch" && monitored > 0 && <small>{monitored}</small>}
               </Link>
@@ -98,7 +135,7 @@ export function Workspace() {
           })}
         </nav>
         <div className="sidebar-bottom">
-          <Link className="workspace-label" href="/app/settings">
+          <Link className="workspace-label" href="/app/settings" onClick={() => setMobile(false)}>
             <span className="workspace-avatar">{user?.username.charAt(0).toUpperCase() || "P"}</span>
             <span><strong>{user?.username || "Аккаунт"}</strong><small>Настройки аккаунта</small></span>
           </Link>
@@ -106,10 +143,10 @@ export function Workspace() {
         </div>
       </aside>
       {mobile && <button className="mobile-scrim" aria-label="Закрыть меню" onClick={() => setMobile(false)} />}
-      <div className="workspace-body">
+      <div className="workspace-body" inert={mobile}>
         <header className="topbar">
           <div>
-            <button className="icon-button mobile-menu" aria-label="Открыть меню" aria-expanded={mobile} aria-controls="workspace-sidebar" onClick={() => setMobile(true)}><Menu size={21} /></button>
+            <button ref={menu} className="icon-button mobile-menu" aria-label="Открыть меню" aria-expanded={mobile} aria-controls="workspace-sidebar" onClick={() => setMobile(true)}><Menu size={21} /></button>
             <div className="breadcrumb"><Link href="/app">PAXVEIL</Link><ChevronRight size={14} /><span>{sectionLabel}</span></div>
           </div>
           <button className="button small secondary" onClick={() => setUpload(true)}><Plus size={16} />Новый проект</button>
@@ -122,10 +159,10 @@ export function Workspace() {
             </Empty>
           ) : selected ? (
             <ProjectView key={selected} id={selected} changed={refresh} deleted={() => { refresh(); router.push("/app"); }} notify={setToast} />
-          ) : section === "fire" ? <FireDrill />
+          ) : section === "fire" ? <FireDrill hasProjects={projects.length > 0} create={() => setUpload(true)} />
             : section === "settings" ? <Settings user={user} notify={setToast} />
-              : section === "watch" ? <Watch projects={projects} refresh={refresh} notify={setToast} />
-                : section === "history" ? <GlobalHistory projects={projects} />
+              : section === "watch" ? <Watch projects={projects} refresh={refresh} notify={setToast} create={() => setUpload(true)} />
+                : section === "history" ? <GlobalHistory projects={projects} create={() => setUpload(true)} />
                   : <Dashboard projects={projects} create={() => setUpload(true)} />}
         </main>
       </div>
@@ -140,10 +177,11 @@ export function Workspace() {
 function Dashboard({ projects, create }: { projects: Project[]; create: () => void }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("recent");
-  const filtered = projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase()))
+  const filtered = projects.filter((project) => project.name.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((left, right) => sort === "name" ? left.name.localeCompare(right.name) : new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
   const reports = projects.filter((project) => project.latest_scan?.report);
   const findings = reports.reduce((sum, project) => sum + (project.latest_scan?.report?.stats.findings || 0), 0);
+  const partialReports = reports.filter(project => !["complete", "recorded_versions_checked"].includes(project.latest_scan!.report!.completeness)).length;
 
   return (
     <section>
@@ -153,7 +191,7 @@ function Dashboard({ projects, create }: { projects: Project[]; create: () => vo
       <div className="dashboard-summary">
         <div><span>Всего проектов</span><strong>{projects.length}</strong></div>
         <div><span>Уязвимости</span><strong className={findings ? "text-danger" : ""}>{reports.length ? findings : "н/д"}</strong>
-          <small>{reports.length ? `Последних отчётов: ${reports.length}` : "Нет готовых отчётов"}</small></div>
+          <small>{reports.length ? `Последних отчётов: ${reports.length}${partialReports ? ` · неполных: ${partialReports}` : ""}` : "Нет готовых отчётов"}</small></div>
         <div><span>Мониторинг включён</span><strong>{projects.filter((project) => project.watch).length}</strong></div>
       </div>
       <div className="report-section">
@@ -167,7 +205,9 @@ function Dashboard({ projects, create }: { projects: Project[]; create: () => vo
             {filtered.map((project) => (
               <Link className="project-row" href={`/app/projects/${project.id}`} key={project.id}>
                 <div className="project-name"><span className="project-glyph"><Folder size={20} strokeWidth={1.7} /></span>
-                  <div><strong>{project.name}</strong><small>{formatDate(project.latest_scan?.created_at)}</small></div></div>
+                  <div><strong>{project.name}</strong><small>{formatDate(project.latest_scan?.created_at)}</small>
+                    <span className="mobile-project-stats"><span>Пакеты: {project.latest_scan?.report?.stats.dependencies ?? "н/д"}</span><span className={project.latest_scan?.report?.stats.findings ? "text-danger" : ""}>Уязвимости: {project.latest_scan?.report?.stats.findings ?? "н/д"}</span></span>
+                  </div></div>
                 <span className={`status-badge ${project.latest_scan?.status || "queued"}`}>{project.latest_scan ? statusLabel(project.latest_scan.status) : "Нет проверок"}</span>
                 <span className="mono registry-number">{project.latest_scan?.report?.stats.dependencies ?? "н/д"}</span>
                 <span className={`mono registry-number ${project.latest_scan?.report?.stats.findings ? "text-danger" : ""}`}>{project.latest_scan?.report?.stats.findings ?? "н/д"}</span>
@@ -175,7 +215,7 @@ function Dashboard({ projects, create }: { projects: Project[]; create: () => vo
               </Link>
             ))}
           </div>
-        ) : <Empty title="Ничего не найдено" detail="Попробуйте другое название." /> : (
+        ) : <Empty title="Ничего не найдено" detail="Попробуйте другое название."><button className="button secondary" onClick={() => setQuery("")}>Сбросить поиск</button></Empty> : (
           <Empty title="Добавьте первый проект" detail="Загрузите requirements.txt, poetry.lock или uv.lock. Результат проверки будет сохранён здесь.">
             <button className="button primary" onClick={create}><Plus size={17} />Добавить проект</button>
           </Empty>
@@ -185,7 +225,7 @@ function Dashboard({ projects, create }: { projects: Project[]; create: () => vo
   );
 }
 
-function Watch({ projects, refresh, notify }: { projects: Project[]; refresh: () => void; notify: (text: string) => void }) {
+function Watch({ projects, refresh, notify, create }: { projects: Project[]; refresh: () => void; notify: (text: string) => void; create: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -216,9 +256,9 @@ function Watch({ projects, refresh, notify }: { projects: Project[]; refresh: ()
           <div className="watch-row" key={project.id}><div>
             <Link href={`/app/projects/${project.id}`}>{project.name}<ArrowUpRight size={15} /></Link>
             <small>Последняя проверка: {formatDate(project.latest_scan?.created_at)}</small></div>
-            <button className={`toggle ${project.watch ? "on" : ""}`} role="switch" aria-checked={project.watch} aria-label={`Мониторинг ${project.name}`} disabled={busy === project.id} onClick={() => toggle(project)}><i /></button>
+            <button className={`toggle ${project.watch ? "on" : ""}`} role="switch" aria-checked={project.watch} aria-label={`Мониторинг ${project.name}`} disabled={busy !== null} onClick={() => toggle(project)}><i /></button>
           </div>
-        )) : <Empty title="Нет проектов" detail="Добавьте проект, чтобы включить мониторинг." />}
+        )) : <Empty title="Нет проектов" detail="Добавьте проект, чтобы включить мониторинг."><button className="button primary" onClick={create}><Plus size={17} />Добавить проект</button></Empty>}
       </div>
       <div className="report-section notification-section"><div className="report-title"><h2>Уведомления<span className="count">{notifications.length}</span></h2></div>
         {loading ? <Loading /> : notifications.length ? <div className="notifications">{notifications.map((notification) => <NotificationItem key={notification.id} notification={notification} />)}</div>
@@ -228,14 +268,20 @@ function Watch({ projects, refresh, notify }: { projects: Project[]; refresh: ()
   );
 }
 
-function GlobalHistory({ projects }: { projects: Project[] }) {
+function GlobalHistory({ projects, create }: { projects: Project[]; create: () => void }) {
   const [scans, setScans] = useState<Array<Scan & { project: Project }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
     let alive = true;
-    Promise.all(projects.map(async (project) => (await api<Scan[]>(`/projects/${project.id}/scans`)).map((scan) => ({ ...scan, project }))))
-      .then((groups) => { if (alive) setScans(groups.flat().sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())); })
+    setLoading(true);
+    setError("");
+    Promise.allSettled(projects.map(async (project) => (await api<Scan[]>(`/projects/${project.id}/scans`)).map((scan) => ({ ...scan, project }))))
+      .then((groups) => {
+        if (!alive) return;
+        setScans(groups.flatMap(group => group.status === "fulfilled" ? group.value : []).sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime()));
+        if (groups.some(group => group.status === "rejected")) setError("Не удалось загрузить историю части проектов. Обновите страницу, чтобы повторить.");
+      })
       .catch((failure) => { if (alive) setError(failure.message); }).finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [projects]);
@@ -248,11 +294,12 @@ function GlobalHistory({ projects }: { projects: Project[] }) {
           <thead><tr><th>Проект</th><th>Проверка</th><th>Дата</th><th>Статус</th><th>Уязвимости</th></tr></thead>
           <tbody>{scans.map((scan) => <tr key={scan.id}>
             <td><Link className="table-title" href={`/app/projects/${scan.project.id}?tab=history`}>{scan.project.name}</Link></td>
-            <td className="mono" title={scan.id}>#{scan.id.slice(0, 8)}</td><td>{formatDate(scan.created_at)}</td>
+            <td className="mono" title={scan.id}>{scan.report ? <Link className="text-button" href={`/app/projects/${scan.project.id}?tab=report&scan=${scan.id}`}>#{scan.id.slice(0, 8)}</Link> : <>#{scan.id.slice(0, 8)}</>}</td><td>{formatDate(scan.created_at)}</td>
             <td><span className={`status-badge ${scan.status}`}>{statusLabel(scan.status)}</span></td><td className="mono">{scan.report?.stats.findings ?? "н/д"}</td>
           </tr>)}</tbody>
         </table></div>
-      ) : <Empty title="Нет сохранённых проверок" detail="Загрузите файл зависимостей, чтобы получить первый отчёт." />}
+      ) : error ? <Empty title="История недоступна" detail="Не удалось получить сохранённые проверки."><button className="button secondary" onClick={() => window.location.reload()}>Повторить загрузку</button></Empty>
+        : <Empty title="Нет сохранённых проверок" detail="Загрузите файл зависимостей, чтобы получить первый отчёт."><button className="button primary" onClick={create}><Plus size={17} />Добавить проект</button></Empty>}
     </section>
   );
 }

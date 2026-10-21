@@ -1,6 +1,6 @@
 """Add lease fencing and analytical SQL views."""
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "e7281f"
 down_revision = "ca50cb3db5e5"

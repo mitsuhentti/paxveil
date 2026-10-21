@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, LoaderCircle, ArrowUpRight, AlertTriangle, Info } from "lucide-react";
+import { Search, LoaderCircle, ArrowUpRight, AlertTriangle, Info, Plus } from "lucide-react";
 import { api, json } from "@/lib/api";
 import type { FireResult } from "@/lib/types";
 import { ErrorBanner, External, statusLabel, displayText } from "./ui";
 
-export function FireDrill() {
+export function FireDrill({ hasProjects = true, create }: { hasProjects?: boolean; create?: () => void }) {
   const [cve, setCve] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<FireResult | null>(null);
@@ -38,6 +38,9 @@ export function FireDrill() {
           <p>Найдите конкретную уязвимость в сохранённых проектах.</p>
         </div>
       </div>
+      {!hasProjects && <div className="next-action"><div><strong>Сначала добавьте проект</strong><p>Проверка CVE ищет совпадения в ваших сохранённых зависимостях.</p></div>
+        {create && <button className="button primary" onClick={create}><Plus size={17} />Добавить проект</button>}
+      </div>}
       <form className="fire-form" onSubmit={submit}>
         <label htmlFor="cve">Номер CVE</label>
         <div>
@@ -46,26 +49,30 @@ export function FireDrill() {
             <input
               id="cve"
               value={cve}
-              onChange={event => setCve(event.target.value)}
+              onChange={event => { setCve(event.target.value); setResult(null); setError(""); }}
+              disabled={busy || !hasProjects}
               required
               pattern="[Cc][Vv][Ee]-[0-9]{4}-[0-9]{4,}"
               placeholder="CVE-2024-35195"
               className="mono"
               autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              title="Формат: CVE-2024-35195"
             />
           </span>
-          <button disabled={busy} className="button primary">
+          <button disabled={busy || !hasProjects} className="button primary">
             {busy ? <LoaderCircle size={17} className="spin" /> : <Search size={17} />}
             {busy ? "Проверка идёт" : "Проверить проекты"}
           </button>
         </div>
-        <p className="form-hint">Проверка использует последние сохранённые версии пакетов и данные OSV.</p>
+        <p className="form-hint">Проверка использует последние сохранённые версии пакетов и данные OSV.{hasProjects && <> Например, <button type="button" className="text-button mono" disabled={busy} onClick={() => { setCve("CVE-2024-35195"); setResult(null); setError(""); document.getElementById("cve")?.focus(); }}>CVE-2024-35195</button>.</>}</p>
       </form>
       {error && <ErrorBanner message={error} />}
       {busy && <div className="loading-state" role="status"><LoaderCircle size={22} className="spin" /><span>Поиск CVE в OSV и проектах</span></div>}
       {!result && !busy && (
         <div className="fire-explanation">
-          <div><span className="status-dot ok" /><strong>Совпадение</strong><p>Сохранённая версия входит в уязвимый диапазон.</p></div>
+          <div><span className="status-dot danger" /><strong>Совпадение</strong><p>Сохранённая версия входит в уязвимый диапазон.</p></div>
           <div><span className="status-dot warning" /><strong>Возможное совпадение</strong><p>Пакет найден, но версия требует уточнения.</p></div>
           <div><span className="status-dot" /><strong>Недостаточно данных</strong><p>Источник или версия недоступны для проверки.</p></div>
         </div>

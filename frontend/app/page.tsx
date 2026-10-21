@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Bell, FileText, GitBranch, Send, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Bell, Download, FileText, GitBranch, Send, SlidersHorizontal } from "lucide-react";
 import { Brand, Mark } from "@/components/brand";
 
 const formats = ["requirements.txt", "poetry.lock", "uv.lock"];
@@ -12,43 +12,46 @@ export default function Landing() {
         <nav aria-label="Главная навигация">
           <a href="#workflow">Как это работает</a>
           <Link href="/login">Войти</Link>
-          <Link className="button small primary" href="/login?register=1">
-            Создать аккаунт <ArrowUpRight size={16} />
-          </Link>
+          <a className="button small primary" href="https://t.me/PAXVEIL_Bot">
+            Открыть бота <ArrowUpRight size={16} />
+          </a>
         </nav>
       </header>
       <main>
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">Python / зависимости</p>
-            <h1>Проверка зависимостей Python</h1>
+            <p className="eyebrow">PAXVEIL для Python</p>
+            <h1>Найдите уязвимости в зависимостях</h1>
             <p className="hero-description">
-              Загрузите файл проекта, найдите известные уязвимости и сравните
-              варианты обновления пакетов.
+              Отправьте файл зависимостей боту. Получите отчёт об известных
+              уязвимостях, сравните обновления и следите за изменениями.
             </p>
             <div className="hero-actions">
-              <Link className="button primary" href="/login?register=1">
-                Проверить проект <ArrowRight size={18} />
-              </Link>
-              <a className="button secondary" href="#workflow">Как это работает</a>
+              <a className="button primary" href="https://t.me/PAXVEIL_Bot">
+                Проверить в Telegram <Send size={17} />
+              </a>
+              <Link className="button secondary" href="/login">Открыть в браузере <ArrowRight size={16} /></Link>
             </div>
             <div className="entry-formats" aria-label="Поддерживаемые файлы">
               {formats.map((format) => <code key={format}>{format}</code>)}
             </div>
           </div>
           <div className="landing-visual">
-            <div className="landing-file">
-              <FileText size={20} aria-hidden="true" />
-              <div>
-                <strong>Файл зависимостей</strong>
-                <span>Точные версии пакетов и параметры окружения</span>
+            <div className="landing-sample">
+              <div className="landing-sample-heading">
+                <FileText size={18} aria-hidden="true" /><strong>requirements.txt</strong><span>Пример</span>
+              </div>
+              <pre><code>requests==2.31.0</code></pre>
+              <div className="landing-sample-footer">
+                <span>Отправьте файл боту или выберите пример в меню.</span>
+                <a href="/examples/requirements.txt" download="requirements.txt"><Download size={14} aria-hidden="true" /> Скачать</a>
               </div>
             </div>
             <div className="landing-report">
               <header>
                 <span className="landing-report-mark"><Mark size={26} /></span>
                 <div>
-                  <strong>Что будет в отчёте</strong>
+                  <strong>От проверки к решению</strong>
                   <span>Сохраняется в вашем проекте</span>
                 </div>
               </header>
@@ -62,7 +65,7 @@ export default function Landing() {
               </div>
               <div className="landing-report-row">
                 <SlidersHorizontal size={18} aria-hidden="true" />
-                <div><strong>Варианты обновления</strong><span>Новые версии и проверка совместимости зависимостей</span></div>
+                <div><strong>Варианты обновления</strong><span>Расчёт в FixLab и повторная проверка версий</span></div>
               </div>
             </div>
           </div>
@@ -75,14 +78,14 @@ export default function Landing() {
         <section id="workflow" className="workflow">
           <div className="section-intro">
             <h2>Как проверить проект</h2>
-            <p>Исходный код загружать не нужно. Для анализа достаточно файла зависимостей.</p>
+            <p>Для первой проверки достаточно файла зависимостей. Код проекта и сами пакеты не запускаются.</p>
           </div>
           <div className="workflow-rows">
             <article>
               <span className="step-num">01</span>
               <div>
                 <h3>Загрузите зависимости</h3>
-                <p>Укажите версию Python и платформу проекта. PAXVEIL разберёт пакеты и маркеры окружения.</p>
+                <p>Выберите версию Python и систему проекта. Отправьте requirements.txt, poetry.lock или uv.lock размером до 1 МиБ.</p>
               </div>
             </article>
             <article>
@@ -96,7 +99,7 @@ export default function Landing() {
               <span className="step-num">03</span>
               <div>
                 <h3>Сравните обновления</h3>
-                <p>FixLab подберёт версии и проверит зависимости. Перед обновлением проекта запустите его тесты.</p>
+                <p>Выберите подходящий вариант в FixLab. Сервис проверит новые версии в OSV; совместимость приложения подтвердят его тесты.</p>
               </div>
             </article>
           </div>
@@ -104,10 +107,10 @@ export default function Landing() {
         <section className="landing-link">
           <div>
             <Send size={24} aria-hidden="true" />
-            <h2>Уведомления в Telegram</h2>
-            <p>Подключите бота и включите Watch для нужных проектов. Уведомления придут при появлении уязвимостей и изменении приоритетов.</p>
+            <h2>Следите за изменениями</h2>
+            <p>Включите мониторинг для проекта. Новые уязвимости, исправления и изменения приоритетов придут в Telegram. Время и частоту уведомлений можно настроить.</p>
           </div>
-          <Link className="button secondary" href="/login">Открыть проекты <ArrowUpRight size={16} /></Link>
+          <a className="button secondary" href="https://t.me/PAXVEIL_Bot">Открыть PAXVEIL Bot <ArrowUpRight size={16} /></a>
         </section>
       </main>
       <footer className="landing-footer">

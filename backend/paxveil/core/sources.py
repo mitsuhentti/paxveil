@@ -7,6 +7,7 @@ import os
 import random
 import sqlite3
 import time
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote, urlsplit
@@ -34,15 +35,26 @@ class SourceError(RuntimeError):
 
 
 class SnapshotCache:
-    """Durable TTL index plus content-addressed immutable public source snapshots."""
+    """Bounded public payload cache with immutable hashes and explicit TTLs."""
 
-    def __init__(self, directory: str | Path | None = None):
-        self.directory = Path(
-            directory or os.getenv("PAXVEIL_CACHE_DIR", "runtime/cache")
+    def __init__(
+        self,
+        directory: str | Path | None = None,
+        *,
+        max_bytes: int | None = None,
+        max_keys: int | None = None,
+    ):
+        self.max_bytes = int(
+            max_bytes if max_bytes is not None else os.getenv("PAXVEIL_CACHE_MAX_BYTES", 256 * 1024 * 1024)
         )
+        self.max_keys = int(max_keys if max_keys is not None else os.getenv("PAXVEIL_CACHE_MAX_KEYS", 10000))
+        if self.max_bytes < 1 or self.max_keys < 1:
+            raise ValueError("Public cache limits must be positive")
+        self.max_age_seconds = 7 * 86400
+        self.directory = Path(directory or os.getenv("PAXVEIL_CACHE_DIR", "runtime/cache"))
         self.directory.mkdir(parents=True, exist_ok=True)
         self.path = self.directory / "sources.sqlite3"
-        with self._connect() as db:
+        with closing(self._connect()) as db, db:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS snapshots (
                     hash TEXT PRIMARY KEY, source TEXT NOT NULL,
@@ -65,18 +77,35 @@ class SnapshotCache:
             db.execute(
                 "UPDATE cache SET fetched_at=(SELECT fetched_at FROM snapshots WHERE snapshots.hash=cache.snapshot_hash) WHERE fetched_at IS NULL"
             )
+            if "recorded_at" not in columns:
+                try:
+                    db.execute("ALTER TABLE cache ADD COLUMN recorded_at REAL")
+                except sqlite3.OperationalError as exc:
+                    if "duplicate column" not in str(exc).lower():
+                        raise
+                db.execute(
+                    "UPDATE cache SET recorded_at=COALESCE(CAST(strftime('%s', fetched_at) AS REAL), ?) WHERE recorded_at IS NULL",
+                    (time.time(),),
+                )
+            db.execute("CREATE INDEX IF NOT EXISTS ix_cache_recorded ON cache(recorded_at,key)")
+            db.execute("CREATE INDEX IF NOT EXISTS ix_cache_snapshot ON cache(snapshot_hash)")
+            self._prune(db, time.time())
+        self._compact()
 
     def _connect(self):
+        fresh = not self.path.exists()
         db = sqlite3.connect(self.path, timeout=15)
+        if fresh:
+            db.execute("PRAGMA auto_vacuum=INCREMENTAL")
         db.execute("PRAGMA journal_mode=WAL")
         db.execute("PRAGMA foreign_keys=ON")
         return db
 
     def _get(self, key: str) -> dict | None:
-        with self._connect() as db:
+        with closing(self._connect()) as db, db:
             row = db.execute(
-                "SELECT s.body,COALESCE(c.fetched_at,s.fetched_at),s.hash,c.expires_at FROM cache c JOIN snapshots s ON s.hash=c.snapshot_hash WHERE c.key=?",
-                (key,),
+                "SELECT s.body,COALESCE(c.fetched_at,s.fetched_at),s.hash,c.expires_at FROM cache c JOIN snapshots s ON s.hash=c.snapshot_hash WHERE c.key=? AND c.recorded_at>=?",
+                (key, time.time() - self.max_age_seconds),
             ).fetchone()
         if not row:
             return None
@@ -91,24 +120,76 @@ class SnapshotCache:
         return await asyncio.to_thread(self._get, key)
 
     def _put(self, key: str, source: str, data: dict, ttl: int) -> dict:
-        body = json.dumps(
-            data, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-        )
+        body = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(body.encode()).hexdigest()
         fetched_at = utcnow()
-        with self._connect() as db:
-            db.execute(
-                "INSERT OR IGNORE INTO snapshots(hash,source,fetched_at,body) VALUES (?,?,?,?)",
-                (digest, source, fetched_at, body),
-            )
-            db.execute(
-                "INSERT INTO cache(key,snapshot_hash,expires_at,fetched_at) VALUES (?,?,?,?) ON CONFLICT(key) DO UPDATE SET snapshot_hash=excluded.snapshot_hash,expires_at=excluded.expires_at,fetched_at=excluded.fetched_at",
-                (key, digest, time.time() + ttl, fetched_at),
-            )
+        recorded_at = time.time()
+        with closing(self._connect()) as db, db:
+            db.execute("BEGIN IMMEDIATE")
+            if len(body.encode()) <= self.max_bytes:
+                db.execute(
+                    "INSERT OR IGNORE INTO snapshots(hash,source,fetched_at,body) VALUES (?,?,?,?)",
+                    (digest, source, fetched_at, body),
+                )
+                db.execute(
+                    "INSERT INTO cache(key,snapshot_hash,expires_at,fetched_at,recorded_at) VALUES (?,?,?,?,?) ON CONFLICT(key) DO UPDATE SET snapshot_hash=excluded.snapshot_hash,expires_at=excluded.expires_at,fetched_at=excluded.fetched_at,recorded_at=excluded.recorded_at",
+                    (key, digest, recorded_at + ttl, fetched_at, recorded_at),
+                )
+            else:
+                # The real response can still be analyzed without keeping its body.
+                db.execute("DELETE FROM cache WHERE key=?", (key,))
+            self._prune(db, recorded_at)
+        self._compact()
         return {"fetched_at": fetched_at, "snapshot_hash": digest}
 
     async def put(self, key: str, source: str, data: dict, ttl: int) -> dict:
         return await asyncio.to_thread(self._put, key, source, data, ttl)
+
+    def _prune(self, db, at: float):
+        db.execute("DELETE FROM cache WHERE recorded_at<?", (at - self.max_age_seconds,))
+        db.execute(
+            "DELETE FROM snapshots WHERE NOT EXISTS (SELECT 1 FROM cache WHERE cache.snapshot_hash=snapshots.hash)"
+        )
+        keys = db.execute("SELECT COUNT(*) FROM cache").fetchone()[0]
+        # BLOB length measures UTF-8 bytes and reads SQLite record metadata.
+        total = db.execute("SELECT COALESCE(SUM(length(CAST(body AS BLOB))),0) FROM snapshots").fetchone()[0]
+        while keys > self.max_keys or total > self.max_bytes:
+            oldest = db.execute(
+                "SELECT c.key,c.snapshot_hash,length(CAST(s.body AS BLOB)) FROM cache c JOIN snapshots s ON s.hash=c.snapshot_hash ORDER BY c.recorded_at,c.key LIMIT 128"
+            ).fetchall()
+            if not oldest:
+                break
+            for key, digest, size in oldest:
+                db.execute("DELETE FROM cache WHERE key=?", (key,))
+                keys -= 1
+                if not db.execute("SELECT 1 FROM cache WHERE snapshot_hash=? LIMIT 1", (digest,)).fetchone():
+                    db.execute("DELETE FROM snapshots WHERE hash=?", (digest,))
+                    total -= size
+                if keys <= self.max_keys and total <= self.max_bytes:
+                    break
+
+    def _compact(self):
+        # Maintenance is optional and must not wait behind an active source writer.
+        # A legacy database is converted once after substantial orphan reclamation.
+        try:
+            with closing(sqlite3.connect(self.path, timeout=0.05)) as db:
+                pages = db.execute("PRAGMA page_count").fetchone()[0]
+                free = db.execute("PRAGMA freelist_count").fetchone()[0]
+                size = db.execute("PRAGMA page_size").fetchone()[0]
+                if free * size < 1024 * 1024 or free * 4 < pages:
+                    return
+                if db.execute("PRAGMA auto_vacuum").fetchone()[0] == 0:
+                    db.execute("PRAGMA auto_vacuum=INCREMENTAL")
+                    db.execute("VACUUM")
+                else:
+                    db.execute("BEGIN IMMEDIATE")
+                    for _ in range(min(free, 2048)):
+                        db.execute("PRAGMA incremental_vacuum(1)")
+                    db.commit()
+                db.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchall()
+        except sqlite3.OperationalError:
+            # Logical limits are already committed; retry maintenance later.
+            pass
 
 
 class Sources:
@@ -144,9 +225,7 @@ class Sources:
         await self._client.aclose()
 
     def _record(self, name: str, status: str, key: str, **extra):
-        self.records.append(
-            {"name": name, "status": status, "request_hash": key, **extra}
-        )
+        self.records.append({"name": name, "status": status, "request_hash": key, **extra})
 
     async def _rate(self, host: str):
         lock = self._limits.setdefault(host, asyncio.Lock())
@@ -174,9 +253,7 @@ class Sources:
             or parsed.port not in {None, 443}
         ):
             raise SourceError(source, "URL is outside the public source allowlist")
-        key = hashlib.sha256(
-            json.dumps([method, url, body], sort_keys=True).encode()
-        ).hexdigest()
+        key = hashlib.sha256(json.dumps([method, url, body], sort_keys=True).encode()).hexdigest()
         cached = await self.cache.get(key)
         if cached and cached["fresh"] and not self.refresh:
             self._record(
@@ -215,9 +292,7 @@ class Sources:
                         async for chunk in response.aiter_bytes():
                             total += len(chunk)
                             if total > MAX_RESPONSE_BYTES:
-                                raise SourceError(
-                                    source, "Response exceeds 32 MiB limit"
-                                )
+                                raise SourceError(source, "Response exceeds 32 MiB limit")
                             chunks.append(chunk)
                         data = json.loads(b"".join(chunks))
                         if not isinstance(data, dict):
@@ -243,9 +318,7 @@ class Sources:
         )
         raise SourceError(source, error, status_code)
 
-    async def osv_batch(
-        self, dependencies: list[dict]
-    ) -> dict[tuple[str, str], list[str]]:
+    async def osv_batch(self, dependencies: list[dict]) -> dict[tuple[str, str], list[str]]:
         result: dict[tuple[str, str], list[str]] = {}
         for offset in range(0, len(dependencies), 100):
             batch = dependencies[offset : offset + 100]
@@ -270,37 +343,25 @@ class Sources:
                 )
                 rows = response.get("results")
                 if not isinstance(rows, list) or len(rows) != len(pending):
-                    raise SourceError(
-                        "OSV", "Batch response count does not match submitted versions"
-                    )
+                    raise SourceError("OSV", "Batch response count does not match submitted versions")
                 following = []
                 for (dep, query), row in zip(pending, rows, strict=True):
-                    if not isinstance(row, dict) or not isinstance(
-                        row.get("vulns", []), list
-                    ):
-                        raise SourceError(
-                            "OSV", "Invalid vulnerability query response shape"
-                        )
+                    if not isinstance(row, dict) or not isinstance(row.get("vulns", []), list):
+                        raise SourceError("OSV", "Invalid vulnerability query response shape")
                     key = (dep["name"], dep["version"])
                     ids = result.setdefault(key, [])
                     ids.extend(
-                        v["id"]
-                        for v in row.get("vulns", [])
-                        if isinstance(v, dict) and isinstance(v.get("id"), str)
+                        v["id"] for v in row.get("vulns", []) if isinstance(v, dict) and isinstance(v.get("id"), str)
                     )
                     if row.get("next_page_token"):
-                        following.append(
-                            (dep, {**query, "page_token": row["next_page_token"]})
-                        )
+                        following.append((dep, {**query, "page_token": row["next_page_token"]}))
                 pending = following
             if pending:
                 raise SourceError("OSV", "Pagination exceeded safe request limit")
         return {key: list(dict.fromkeys(ids)) for key, ids in result.items()}
 
     async def advisory(self, advisory_id: str) -> dict:
-        data = await self.request(
-            "OSV", "GET", f"https://api.osv.dev/v1/vulns/{quote(advisory_id, safe='')}"
-        )
+        data = await self.request("OSV", "GET", f"https://api.osv.dev/v1/vulns/{quote(advisory_id, safe='')}")
         if (
             not isinstance(data.get("id"), str)
             or not isinstance(data.get("affected", []), list)
@@ -318,9 +379,7 @@ class Sources:
         )
 
     async def project(self, name: str) -> dict:
-        return await self.request(
-            "PyPI", "GET", f"https://pypi.org/pypi/{quote(name, safe='')}/json"
-        )
+        return await self.request("PyPI", "GET", f"https://pypi.org/pypi/{quote(name, safe='')}/json")
 
     async def deps_requirements(self, name: str, version: str) -> dict:
         return await self.request(
@@ -333,9 +392,7 @@ class Sources:
     async def epss(self, cves: list[str]) -> dict[str, dict]:
         result = {}
         for offset in range(0, len(cves), 75):
-            url = "https://api.first.org/data/v1/epss?cve=" + ",".join(
-                cves[offset : offset + 75]
-            )
+            url = "https://api.first.org/data/v1/epss?cve=" + ",".join(cves[offset : offset + 75])
             data = await self.request("FIRST EPSS", "GET", url, ttl=21600)
             if not isinstance(data.get("data"), list):
                 raise SourceError("FIRST EPSS", "Invalid probability response shape")
@@ -360,11 +417,5 @@ class Sources:
             ttl=21600,
         )
         if not isinstance(data.get("vulnerabilities"), list):
-            raise SourceError(
-                "CISA KEV", "Invalid exploited vulnerability catalog shape"
-            )
-        return {
-            v["cveID"]
-            for v in data.get("vulnerabilities", [])
-            if isinstance(v, dict) and "cveID" in v
-        }
+            raise SourceError("CISA KEV", "Invalid exploited vulnerability catalog shape")
+        return {v["cveID"] for v in data.get("vulnerabilities", []) if isinstance(v, dict) and "cveID" in v}

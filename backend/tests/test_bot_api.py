@@ -30,9 +30,7 @@ async def test_real_bot_api_worker_watch_and_web_link_contract(api_env, monkeypa
         api_env.settings.bot_key,
         transport=httpx.ASGITransport(app=api_env.api.app),
     )
-    service = BotService(
-        api, BotConfig(SYNTHETIC_TOKEN, api_env.settings.bot_key, wait_seconds=0)
-    )
+    service = BotService(api, BotConfig(SYNTHETIC_TOKEN, api_env.settings.bot_key, wait_seconds=0))
     dispatcher = build_dispatcher(service)
     counter = 0
 
@@ -49,9 +47,7 @@ async def test_real_bot_api_worker_watch_and_web_link_contract(api_env, monkeypa
         if text:
             message["text"] = text
             if text.startswith("/"):
-                message["entities"] = [
-                    {"type": "bot_command", "offset": 0, "length": len(text.split()[0])}
-                ]
+                message["entities"] = [{"type": "bot_command", "offset": 0, "length": len(text.split()[0])}]
         if document:
             message["document"] = {
                 "file_id": "synthetic-file",
@@ -79,9 +75,7 @@ async def test_real_bot_api_worker_watch_and_web_link_contract(api_env, monkeypa
         await dispatcher.feed_raw_update(bot, update)
 
     await feed(text="/start")
-    await feed(
-        document={"file_name": "requirements.txt", "file_size": len(telegram.content)}
-    )
+    await feed(document={"file_name": "requirements.txt", "file_size": len(telegram.content)})
     with api_env.factory() as db:
         project = db.scalar(select(api_env.db.Project))
         assert project is not None and project.filename == "requirements.txt"

@@ -1,5 +1,5 @@
 #requires -Version 7.0
-param([switch]$Telegram, [string]$RuntimeDirectory)
+param([switch]$Telegram, [switch]$BotOnly, [string]$RuntimeDirectory)
 $ErrorActionPreference = 'Stop'
 $repoPath = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $envContents = [IO.File]::ReadAllText((Join-Path $repoPath '.env'))
@@ -9,6 +9,7 @@ if ($envContents -notmatch 'DATABASE_URL=postgresql\+psycopg://paxveil:[^@]+@127
 if (-not $RuntimeDirectory) { $RuntimeDirectory = Join-Path $repoPath 'runtime' }
 $RuntimeDirectory = (Resolve-Path -LiteralPath $RuntimeDirectory).Path
 $pythonPath = Join-Path $RuntimeDirectory 'venv\Scripts\python.exe'
+$env:PAXVEIL_LOG_DIR = Join-Path $RuntimeDirectory 'logs'
 if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run scripts/init.ps1 first' }
 $manifestPath = Join-Path $RuntimeDirectory 'processes.json'
 if (Test-Path -LiteralPath $manifestPath) { throw 'A process manifest already exists. Run scripts/stop.ps1 before starting again.' }
@@ -21,18 +22,22 @@ function Test-LocalPort([int]$port) {
         return $client.Connected
     } catch { return $false } finally { $client.Dispose() }
 }
-foreach ($port in @(55432, 8000, 3000)) {
+$requiredPorts = if ($BotOnly) { @(55432, 8000) } else { @(55432, 8000, 3000) }
+foreach ($port in $requiredPorts) {
     if (Test-LocalPort $port) { throw "Local port $port is already occupied. No service was started or database changed." }
 }
 $records = @()
 function Start-PaxveilProcess([string]$label, [string]$executable, [string[]]$arguments, [string]$directory) {
     $process = Start-Process -FilePath $executable -ArgumentList $arguments -WorkingDirectory $directory -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $RuntimeDirectory "$label.log") -RedirectStandardError (Join-Path $RuntimeDirectory "$label.error.log")
     $script:records += [pscustomobject]@{ label=$label; pid=$process.Id; started=$process.StartTime.ToUniversalTime().ToString('o'); executable=$executable }
-    $script:records | ConvertTo-Json | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+    $script:records | ConvertTo-Json | Set-Content -LiteralPath "$manifestPath.tmp" -Encoding UTF8
+    [IO.File]::Move("$manifestPath.tmp", $manifestPath, $true)
 }
 $binRecordPath = Join-Path $RuntimeDirectory 'postgres-bin.txt'
 $pgBin = if (Test-Path -LiteralPath $binRecordPath) { (Get-Content -LiteralPath $binRecordPath -Raw).Trim() } else { 'C:\Program Files\PostgreSQL\18\bin' }
 $pgData = Join-Path $RuntimeDirectory 'pgdata'
+$startupLock = [IO.File]::Open((Join-Path $RuntimeDirectory 'processes.operation.lock'), 'OpenOrCreate', 'ReadWrite', 'None')
+try {
 Start-PaxveilProcess 'postgres' (Join-Path $pgBin 'postgres.exe') @('-D', "`"$pgData`"", '-p', '55432', '-h', '127.0.0.1') $RuntimeDirectory
 $ready = $false
 for ($attempt = 0; $attempt -lt 30; $attempt++) {
@@ -53,12 +58,15 @@ try {
     & $pythonPath -m alembic upgrade head
     if ($LASTEXITCODE -ne 0) { throw 'Migration failed' }
 } finally { Pop-Location }
-Start-PaxveilProcess 'api' $pythonPath @('-m','uvicorn','paxveil.api:app','--host','127.0.0.1','--port','8000') (Join-Path $repoPath 'backend')
+Start-PaxveilProcess 'api' $pythonPath @('-m','uvicorn','paxveil.api:app','--host','127.0.0.1','--port','8000','--no-access-log') (Join-Path $repoPath 'backend')
 Start-PaxveilProcess 'worker' $pythonPath @('-m','paxveil.worker') (Join-Path $repoPath 'backend')
-$nodePath = (Get-Command node.exe).Source
-Start-PaxveilProcess 'web' $nodePath @('node_modules\next\dist\bin\next','start','--hostname','127.0.0.1','--port','3000') (Join-Path $repoPath 'frontend')
+if (-not $BotOnly) {
+    $nodePath = (Get-Command node.exe).Source
+    Start-PaxveilProcess 'web' $nodePath @('node_modules\next\dist\bin\next','start','--hostname','127.0.0.1','--port','3000') (Join-Path $repoPath 'frontend')
+}
 if ($Telegram) { Start-PaxveilProcess 'bot' $pythonPath @('-m','paxveil.bot') (Join-Path $repoPath 'backend') }
-foreach ($url in @('http://127.0.0.1:8000/api/health', 'http://127.0.0.1:3000/')) {
+$healthUrls = if ($BotOnly) { @('http://127.0.0.1:8000/api/health') } else { @('http://127.0.0.1:8000/api/health', 'http://127.0.0.1:3000/') }
+foreach ($url in $healthUrls) {
     $httpReady = $false
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
         try {
@@ -70,3 +78,4 @@ foreach ($url in @('http://127.0.0.1:8000/api/health', 'http://127.0.0.1:3000/')
     if (-not $httpReady) { throw "Service did not become ready: $url. Inspect logs, then run scripts/stop.ps1." }
 }
 Write-Output 'PAXVEIL: http://localhost:3000 | API: http://127.0.0.1:8000/docs'
+} finally { $startupLock.Dispose() }

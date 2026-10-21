@@ -41,6 +41,7 @@ class User(Base):
     telegram_id: Mapped[int | None] = mapped_column(String(24), unique=True)
     preferences: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    last_maintenance_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class Session(Base):
@@ -55,6 +56,13 @@ class LinkCode(Base):
     code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class RequestLimit(Base):
+    __tablename__ = "request_limits"
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 
 class Project(Base):
@@ -218,11 +226,15 @@ Index("ix_notifications_due", Notification.status, Notification.run_at)
 def make_engine(url: str):
     if url.startswith("sqlite"):
         Path("runtime").mkdir(exist_ok=True)
-    engine = create_engine(url, pool_pre_ping=True, connect_args={"check_same_thread": False} if url.startswith("sqlite") else {})
+    engine = create_engine(
+        url, pool_pre_ping=True, connect_args={"check_same_thread": False} if url.startswith("sqlite") else {}
+    )
     if url.startswith("sqlite"):
+
         @event.listens_for(engine, "connect")
         def sqlite_fk(connection, _):
             connection.execute("PRAGMA foreign_keys=ON")
+
     return engine
 
 

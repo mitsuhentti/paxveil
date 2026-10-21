@@ -1,0 +1,11 @@
+{
+  "verified_at": "2026-10-21T13:47:01.888518+00:00",
+  "operation": "isolated PostgreSQL dump/restore",
+  "result": "passed",
+  "archive_bytes": 87355,
+  "table_count": 20,
+  "row_count": 251,
+  "all_table_fingerprints_match": true,
+  "disposable_database_removed": true,
+  "working_database_mutated": false
+}

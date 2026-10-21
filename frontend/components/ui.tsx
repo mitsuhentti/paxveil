@@ -6,8 +6,8 @@ import { safeUrl } from "@/lib/api";
 
 export function Loading({ text = "Загрузка данных" }: { text?: string }) {
   return (
-    <div role="status" className="loading-state">
-      <LoaderCircle size={22} className="spin" />
+    <div role="status" aria-live="polite" className="loading-state">
+      <LoaderCircle size={22} className="spin" aria-hidden="true" />
       <span>{text}</span>
     </div>
   );
@@ -24,7 +24,7 @@ export function Empty({
 }) {
   return (
     <div className="empty-state">
-      <span className="empty-icon"><Inbox size={24} /></span>
+      <span className="empty-icon" aria-hidden="true"><Inbox size={24} /></span>
       <h2>{title}</h2>
       <p>{detail}</p>
       {children}
@@ -35,9 +35,9 @@ export function Empty({
 export function ErrorBanner({ message, retry }: { message: string; retry?: () => void }) {
   return (
     <div role="alert" className="error-banner">
-      <AlertTriangle size={18} />
+      <AlertTriangle size={18} aria-hidden="true" />
       <span>{displayText(message)}</span>
-      {retry && <button onClick={retry}>Повторить</button>}
+      {retry && <button type="button" onClick={retry}>Повторить</button>}
     </div>
   );
 }

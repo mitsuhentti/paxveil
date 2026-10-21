@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-21T13:36:44.3451280Z",
+  "finished_at": "2026-10-21T13:37:01.9631679Z",
+  "platform": "Windows / PowerShell 7",
+  "method": "Exact supervisor/helper copies; isolated standard-library Python children; mocked health response; no real database, Telegram calls, port listeners or registry changes",
+  "reboot_performed": false,
+  "pid_reuse_method": "A live fixture PID with a deliberately mismatched recorded start timestamp; no forced OS PID reuse",
+  "source_sha256": {
+    "supervisor": "5b1ed4e4fdbcede94189c223108147a831e20b235f03d424e586987f47f667f1",
+    "paths_helper": "17ca2d3fd036a0a71b270ae53e5ebd888a615c30b88fc46b3e4055c77ea38a2a"
+  },
+  "checks": {
+    "exact_supervisor_copy": true,
+    "exact_paths_helper_copy": true,
+    "initial_four_roles_started": true,
+    "correct_start_time_recognized": true,
+    "initial_all_four_alive": true,
+    "simulated_pid_reuse_fenced": true,
+    "backups_inside_repo_redirected": true,
+    "external_runtime_backups_stay_private": true,
+    "duplicate_supervisor_lock": true,
+    "terminated_worker_restarted": true,
+    "other_roles_preserved_on_worker_restart": true,
+    "disable_flag_stops_supervisor": true,
+    "stale_manifest_kept_for_recovery": true,
+    "stale_manifest_archived": true,
+    "all_roles_relaunched": true,
+    "health_dependency_mocked": true,
+    "no_backup_job_executed": true,
+    "tested_sources_still_current": true,
+    "fixture_children_stopped": true
+  },
+  "passed": true,
+  "failure_type": null
+}
