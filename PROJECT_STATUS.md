@@ -49,8 +49,8 @@ The source results apply to their recorded dates, versions and source coverage. 
 ## Remaining boundaries
 
 - Complete human Telegram acceptance for file upload, saved JSON report, FixLab, linking and actual Watch delivery. Controlled handler/API tests already cover those paths.
-- Execute the entire fresh-checkout bootstrap and prepared Docker stack in suitable environments.
-- Create/push the external repository and observe remote CI. GitHub publication has not happened yet. No open-source license is included; license selection is separate from publication.
+- Execute the entire fresh-machine native bootstrap in a separate environment.
+- Source is published at [https://github.com/mitsuhentti/paxveil](https://github.com/mitsuhentti/paxveil); all three [CI jobs](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml) passed. No open-source license is currently included.
 - Measure capacity before accepting substantial public traffic. No paid hosting or domain has been created.
 
 ## Known limits

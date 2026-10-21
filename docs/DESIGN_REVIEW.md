@@ -80,3 +80,7 @@ All screenshots show the running product and public dependencies under a synthet
 - [Mobile settings](screenshots/redesign-settings-mobile.jpg).
 
 Earlier screenshots are retained as dated validation history. The updated source archive contains this redesign. Git history and contributor attribution retain their original records.
+
+## Usability follow-up, 21 October
+
+The current production interface passed 20 browser checks covering upload cancellation, a real sample scan, report filters, history links, resumed update calculations, unsaved settings drafts, inline form errors, mobile navigation and resize recovery. See [current evidence](USABILITY_VALIDATION.json) and the linked unedited screenshots.

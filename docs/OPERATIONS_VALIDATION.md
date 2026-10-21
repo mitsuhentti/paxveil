@@ -35,7 +35,7 @@ The real production browser retained the QA project and its Investigating findin
 
 The owner configured the bot token locally, `getMe` identified the genuine bot, and the owner explicitly confirmed receiving the menu after `/start`. Interactive real-file upload, account linking, report download and Watch delivery still require the owner's Telegram client checklist. Automated synthetic updates remain separate from these live observations. See [TELEGRAM.md](TELEGRAM.md).
 
-Docker/Compose execution, external CI and independent public hosting remain unverified. The final services were left running locally; continuous operation depends on the computer, processes and network remaining available.
+Docker/Compose and external CI passed on 21 October; see [GitHub Actions](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml). Independent public hosting remains unverified. The final services were left running locally; continuous operation depends on the computer, processes and network remaining available.
 
 ## Backup and real PostgreSQL concurrency, 12 October 2026
 
@@ -45,7 +45,7 @@ The helper also migrated a separate disposable PostgreSQL database and exercised
 
 The daily backup helper defaults to seven-day retention and removes only recognized, checksum-valid old backup pairs after a new backup succeeds. It never restores into an existing database. Previous good backups are retained when creation fails. Private off-device backup and hardware-loss recovery have not been demonstrated.
 
-Compose now defaults to a private API/database bot stack, with the browser UI enabled separately. Log rotation, process limits, init processes, read-only backend roots and graceful stop periods are prepared. YAML parsing and backend/helper lint passed locally. The extended CI prepares queue concurrency, dump/restore, container readiness and builds; no remote CI run has been observed.
+Compose now defaults to a private API/database bot stack, with the browser UI enabled separately. Log rotation, process limits, init processes, read-only backend roots and graceful stop periods are prepared. YAML parsing and backend/helper lint passed locally. The extended CI passed queue concurrency, dump/restore, container readiness and builds on 21 October. [Workflow](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml).
 
 ## Current observations, 21 October 2026
 

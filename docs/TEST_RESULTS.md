@@ -74,6 +74,10 @@ The owner previously confirmed the real `/start` menu, followed by `/privacy`, `
 
 ## Unverified boundaries
 
-The complete fresh-checkout bootstrap, Docker execution, remote GitHub Actions, public traffic capacity and uptime are unverified. GitHub publication has not yet been completed. The selected local deployment can stop with the owner's computer or connection.
+The complete fresh-machine native bootstrap, public traffic capacity and uptime remain unverified. The [public repository](https://github.com/mitsuhentti/paxveil) and successful [GitHub Actions](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml) are available. The selected local deployment can stop with the owner's computer or connection.
 
 FixLab verifies release metadata and known advisories, not application behavior or runtime reachability. Zero known findings is a dated analysis result, not a security guarantee. See [current status](../PROJECT_STATUS.md) and [operations](OPERATIONS_VALIDATION.md).
+
+## Remote CI, 21 October
+
+All three [GitHub Actions jobs](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml) passed: backend tests/lint, PostgreSQL migrations and schema checks, queue concurrency and backup restore; frontend typecheck/build; Compose API/worker build/start/readiness and the optional web image build. The workflow runs against each new code commit.

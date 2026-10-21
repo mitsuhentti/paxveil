@@ -1,5 +1,7 @@
 # PAXVEIL
 
+[![Verification](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml/badge.svg)](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml)
+
 PAXVEIL checks Python dependencies, saves reports and compares update options. The Telegram bot and web app share an owner-scoped API and PostgreSQL database. Watch repeats checks, FixLab compares resolved versions, and Fire Drill searches saved inventories for a CVE.
 
 [Try the bot](https://t.me/PAXVEIL_Bot) · [Русское руководство](docs/USER_GUIDE_RU.md) · [Current status](PROJECT_STATUS.md) · [Deployment](docs/DEPLOYMENT.md) · [Project case](docs/PORTFOLIO.md)
@@ -44,7 +46,7 @@ This development workspace already has an external runtime. From `outputs/paxvei
 .\scripts\start.ps1 -Telegram -RuntimeDirectory '..\..\work\runtime'
 ```
 
-Keep one runtime and one polling instance. Startup checks ports and recorded process identities. The user-level supervisor supports restart after a component fails, Windows sign-in startup and daily private backups with seven-day rotation. Manual sleep, sign-out, shutdown or lost connectivity can interrupt service. [Deployment](docs/DEPLOYMENT.md) covers enable/disable, bot-only operation, updates and restore checks. The complete fresh-machine bootstrap and Docker execution remain unverified.
+Keep one runtime and one polling instance. Startup checks ports and recorded process identities. The user-level supervisor supports restart after a component fails, Windows sign-in startup and daily private backups with seven-day rotation. Manual sleep, sign-out, shutdown or lost connectivity can interrupt service. [Deployment](docs/DEPLOYMENT.md) covers enable/disable, bot-only operation, updates and restore checks. The complete fresh-machine bootstrap remains unverified. Docker images and the private Compose API/worker stack passed remote CI.
 
 ## Evidence
 
@@ -56,7 +58,7 @@ The native supervisor checker also passed all 19 checks on 21 October. In the br
 
 Earlier live analysis of five pinned dependencies returned 12 deduplicated findings. Balanced and Maximum Coverage resolved five pins whose subsequent OSV checks returned zero known findings. These dated observations do not establish application compatibility. A fresh private backup restored on 21 October with all fingerprints matching across 20 tables and 251 rows; the archive was 87,355 bytes. Current inspection confirmed EFS protection of the selected runtime data, logs, private backups and secret file on this Windows machine.
 
-The official Telegram API identified @PAXVEIL_Bot at 13:54:43 UTC on 21 October, verified all 12 commands in default/Russian lists and confirmed no webhook. An earlier connection failure recovered; these are point-in-time checks, not continuous availability evidence. The owner's `/start`, `/privacy`, `/environment` and `/projects` confirmations remain dated to the earlier client checks. Telegram-client upload, report, FixLab, linking and Watch acceptance remain separate work. GitHub publication and remote CI execution have not yet been completed.
+The official Telegram API identified @PAXVEIL_Bot at 13:54:43 UTC on 21 October, verified all 12 commands in default/Russian lists and confirmed no webhook. An earlier connection failure recovered; these are point-in-time checks, not continuous availability evidence. The owner's `/start`, `/privacy`, `/environment` and `/projects` confirmations remain dated to the earlier client checks. Telegram-client upload, report, FixLab, linking and Watch acceptance remain separate work. Source is published on [GitHub](https://github.com/mitsuhentti/paxveil). Backend, frontend and container checks passed [GitHub Actions](https://github.com/mitsuhentti/paxveil/actions/workflows/ci.yml) on 21 October.
 
 [Tests](docs/TEST_RESULTS.md) · [Current runtime](docs/CURRENT_RUNTIME_VALIDATION.json) · [PostgreSQL evidence](docs/POSTGRES_CONCURRENCY_VALIDATION.json) · [Supervisor](docs/NATIVE_SUPERVISOR_VALIDATION.json) · [Backup evidence](docs/BACKUP_VALIDATION.json) · [Live source results](docs/CORE_VALIDATION.json) · [Operations](docs/OPERATIONS_VALIDATION.md)
 
@@ -64,7 +66,7 @@ The official Telegram API identified @PAXVEIL_Bot at 13:54:43 UTC on 21 October,
 
 A manifest may omit installed transitives or root constraints. FixLab targets x86_64 wheel metadata; it never builds uploaded code or tests application behavior. A vulnerable version alone does not establish exploitability. Source failure remains visible, and no known findings is not a guarantee of security. Watch requires a running worker and network.
 
-`backend/paxveil` contains API, worker, ETL, CLI and bot; `frontend` contains Next.js/React; `backend/migrations` contains the PostgreSQL schema and analytical views. `scripts`, `compose.yaml` and `.github/workflows` contain operations and prepared CI.
+`backend/paxveil` contains API, worker, ETL, CLI and bot; `frontend` contains Next.js/React; `backend/migrations` contains the PostgreSQL schema and analytical views. `scripts`, `compose.yaml` and `.github/workflows` contain operations and executable CI.
 
 [Architecture](docs/ARCHITECTURE.md) · [Core](docs/CORE.md) · [API contract](docs/CONTRACT.md) · [Public limits](docs/PUBLIC_RESOURCES.md) · [Cache](docs/PUBLIC_CACHE.md)
 
